@@ -28,9 +28,9 @@ This command implements the following steps:
 if it does not exist.
 
 
-## `multirepo add [-vx] {repo}`
+## `multirepo clone [-vx] {repo}`
 
-Adds a repository to the multirepo.
+Clones a repository into the multirepo.
 
 Flags:
 
@@ -41,7 +41,7 @@ Flags:
 For example:
 
 ```bash
-multirepo add git@github.com:ooni/probe-cli
+multirepo clone git@github.com:ooni/probe-cli
 ```
 
 This command implements the following steps:

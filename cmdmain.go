@@ -57,7 +57,7 @@ func (c *cmdMain) help(w io.Writer, ct commandTable) error {
 // buildCommandsTable builds the [command] table.
 func (c *cmdMain) buildCommandsTable() commandTable {
 	return map[string]command{
-		"add":     &cmdAdd{},
+		"clone":   &cmdClone{},
 		"foreach": &cmdForeach{},
 		"init":    &cmdInit{},
 	}

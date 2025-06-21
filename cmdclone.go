@@ -1,4 +1,4 @@
-// cmdadd.go - implementation of the add command.
+// cmdclone.go - implementation of the clone command.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 package main
@@ -14,18 +14,18 @@ import (
 	"github.com/kballard/go-shellquote"
 )
 
-// cmdAdd implements the add command.
-type cmdAdd struct{}
+// cmdClone implements the clone command.
+type cmdClone struct{}
 
-var _ command = (*cmdAdd)(nil)
+var _ command = (*cmdClone)(nil)
 
 // Description implements [command].
-func (c *cmdAdd) Description() string {
-	return "Adds one or more repositories to the multirepo."
+func (c *cmdClone) Description() string {
+	return "Clones a repository into the multirepo."
 }
 
 // Run implements [command].
-func (c *cmdAdd) Run(ctx context.Context, env environ, argv cliArgs) error {
+func (c *cmdClone) Run(ctx context.Context, env environ, argv cliArgs) error {
 	// Print help if requested to do so by the user.
 	if argv.ContainsHelp() {
 		return c.help(env.Stdout())
@@ -34,8 +34,8 @@ func (c *cmdAdd) Run(ctx context.Context, env environ, argv cliArgs) error {
 	// Parse command line arguments
 	options, err := c.getopt(env, argv)
 	if err != nil {
-		mustFprintf(env.Stderr(), "multirepo add: %s\n", err)
-		mustFprintf(env.Stderr(), "Try `multirepo add --help` for help.\n")
+		mustFprintf(env.Stderr(), "multirepo clone: %s\n", err)
+		mustFprintf(env.Stderr(), "Try `multirepo clone --help` for help.\n")
 		return err
 	}
 
@@ -43,39 +43,39 @@ func (c *cmdAdd) Run(ctx context.Context, env environ, argv cliArgs) error {
 	dd := defaultDotDir()
 	unlock, err := dd.lock(env)
 	if err != nil {
-		mustFprintf(env.Stderr(), "multirepo add: %s\n", err)
+		mustFprintf(env.Stderr(), "multirepo clone: %s\n", err)
 		return err
 	}
 	defer unlock()
 
 	// Clone the repository
 	if err := c.clone(ctx, env, options, dd, options.Repo); err != nil {
-		mustFprintf(env.Stderr(), "multirepo add: %s\n", err)
+		mustFprintf(env.Stderr(), "multirepo clone: %s\n", err)
 		return err
 	}
 
 	return nil
 }
 
-// help prints the help message for the add command.
-func (c *cmdAdd) help(w io.Writer) error {
+// help prints the help message for the clone command.
+func (c *cmdClone) help(w io.Writer) error {
 	mustFprintf(w, "\n")
-	mustFprintf(w, "add - %s\n", c.Description())
+	mustFprintf(w, "clone - %s\n", c.Description())
 	mustFprintf(w, "\n")
-	mustFprintf(w, "usage: multirepo add [-vx] {repo}\n")
+	mustFprintf(w, "usage: multirepo clone [-vx] {repo}\n")
 	mustFprintf(w, "\n")
 	mustFprintf(w, "Flags:\n")
 	mustFprintf(w, "  -v, --verbose         Print output of executed commands\n")
 	mustFprintf(w, "  -x, --print-commands  Print commands as they are executed\n")
 	mustFprintf(w, "\n")
-	mustFprintf(w, "This command adds a repository to the multirepo.\n")
+	mustFprintf(w, "This command clones a repository into the multirepo.\n")
 	mustFprintf(w, "\n")
 	return nil
 }
 
-// cmdAddOptions contains configuration for the add command.
-type cmdAddOptions struct {
-	// Repo is the repository to add.
+// cmdCloneOptions contains configuration for the clone command.
+type cmdCloneOptions struct {
+	// Repo is the repository to clone.
 	Repo string
 
 	// VWriterStderr is the writer executed to log the executed commands stderr.
@@ -89,9 +89,9 @@ type cmdAddOptions struct {
 }
 
 // getopt gets command line options.
-func (c *cmdAdd) getopt(env environ, argv cliArgs) (*cmdAddOptions, error) {
+func (c *cmdClone) getopt(env environ, argv cliArgs) (*cmdCloneOptions, error) {
 	// Initialize the default configuration.
-	options := &cmdAddOptions{
+	options := &cmdCloneOptions{
 		Repo:          "",
 		VWriterStderr: io.Discard,
 		VWriterStdout: io.Discard,
@@ -117,7 +117,7 @@ func (c *cmdAdd) getopt(env environ, argv cliArgs) (*cmdAddOptions, error) {
 		return nil, fmt.Errorf("expected exactly one repository")
 	}
 
-	// Add the repository names to the list of repositories to add.
+	// Set the repository name to clone.
 	options.Repo = args[0]
 
 	// Honour the `-v` flag.
@@ -136,10 +136,10 @@ func (c *cmdAdd) getopt(env environ, argv cliArgs) (*cmdAddOptions, error) {
 }
 
 // clone clones a repository.
-func (c *cmdAdd) clone(
+func (c *cmdClone) clone(
 	ctx context.Context,
 	env environ,
-	options *cmdAddOptions,
+	options *cmdCloneOptions,
 	dd dotDir,
 	repo string,
 ) error {
