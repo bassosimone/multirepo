@@ -13,8 +13,8 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/bassosimone/multirepo/internal/clip"
 	"github.com/kballard/go-shellquote"
-	"github.com/spf13/pflag"
 )
 
 // cmdForeach implements the foreach command.
@@ -111,20 +111,20 @@ func (c *cmdForeach) getopt(env environ, argv cliArgs) (*cmdForeachOptions, erro
 	}
 
 	// Create empty command line parser.
-	clip := pflag.NewFlagSet("", pflag.ContinueOnError)
+	clp := clip.NewFlagSet("", clip.ContinueOnError)
 
 	// Add the `-k` flag.
-	kflag := clip.BoolP("keep-going", "k", false, "")
+	kflag := clp.Bool("keep-going", 'k', false, "")
 
 	// Add the `-x` flag.
-	xflag := clip.BoolP("print-commands", "x", false, "")
+	xflag := clp.Bool("print-commands", 'x', false, "")
 
 	// Parse the command line arguments.
-	if err := clip.Parse(argv.CommandArgs()); err != nil {
+	if err := clp.Parse(argv.CommandArgs()); err != nil {
 		return nil, err
 	}
 
-	args := clip.Args()
+	args := clp.Args()
 	if len(args) < 1 {
 		return nil, fmt.Errorf("expected at least the command name")
 	}

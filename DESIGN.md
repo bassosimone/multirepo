@@ -53,10 +53,9 @@ This command implements the following steps:
 3. Updates the configuration file `.multirepo/config.json`.
 
 
-## `multirepo foreach [-kx] -- {command} [args...]`
+## `multirepo foreach [-kx] {command} [args...]`
 
-Executes a command in each repository. The `--` separator is required
-when you specify options for the subcommand.
+Executes a command in each repository.
 
 Flags:
 

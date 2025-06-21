@@ -10,8 +10,8 @@ import (
 	"io"
 	"os/exec"
 
+	"github.com/bassosimone/multirepo/internal/clip"
 	"github.com/kballard/go-shellquote"
-	"github.com/spf13/pflag"
 )
 
 // cmdAdd implements the add command.
@@ -99,20 +99,20 @@ func (c *cmdAdd) getopt(env environ, argv cliArgs) (*cmdAddOptions, error) {
 	}
 
 	// Create empty command line parser.
-	clip := pflag.NewFlagSet("", pflag.ContinueOnError)
+	clp := clip.NewFlagSet("", clip.ContinueOnError)
 
 	// Add the `-v` flag.
-	vflag := clip.BoolP("verbose", "v", false, "")
+	vflag := clp.Bool("verbose", 'v', false, "")
 
 	// Add the `-x` flag.
-	xflag := clip.BoolP("print-commands", "x", false, "")
+	xflag := clp.Bool("print-commands", 'x', false, "")
 
 	// Parse the command line arguments.
-	if err := clip.Parse(argv.CommandArgs()); err != nil {
+	if err := clp.Parse(argv.CommandArgs()); err != nil {
 		return nil, err
 	}
 
-	args := clip.Args()
+	args := clp.Args()
 	if len(args) != 1 {
 		return nil, fmt.Errorf("expected exactly one repository")
 	}
