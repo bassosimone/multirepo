@@ -13,6 +13,7 @@ import (
 	"os/exec"
 
 	"github.com/bassosimone/clip/pkg/flag"
+	"github.com/bassosimone/clip/pkg/parser"
 	"github.com/kballard/go-shellquote"
 )
 
@@ -117,6 +118,9 @@ func (c *cmdForeach) getopt(env environ, argv cliArgs) (*cmdForeachOptions, erro
 
 	// Add the `-x` flag.
 	xflag := clp.Bool("print-commands", 'x', false, "")
+
+	// Disable option permuation to allow passing options to subcommands
+	clp.Parser().Flags |= parser.FlagNoPermute
 
 	// Parse the command line arguments.
 	if err := clp.Parse(argv.CommandArgs()); err != nil {
