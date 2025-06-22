@@ -3,9 +3,7 @@
 
 package main
 
-import (
-	"path/filepath"
-)
+import "path/filepath"
 
 // dotDir is the multirepo dot directory.
 type dotDir string

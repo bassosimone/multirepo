@@ -74,14 +74,14 @@ func (c *cmdInit) Run(ctx context.Context, env environ, argv cliArgs) error {
 // help prints the help message for the init command.
 func (c *cmdInit) help(w io.Writer) error {
 	mustFprintf(w, "\n")
-	mustFprintf(w, "init - %s\n", c.Description())
+	mustFprintf(w, "multirepo init - %s\n", c.Description())
+	mustFprintf(w, "\n")
+	mustFprintf(w, "This command initializes a multirepo in the current directory.\n")
 	mustFprintf(w, "\n")
 	mustFprintf(w, "usage: multirepo init [-x]\n")
 	mustFprintf(w, "\n")
 	mustFprintf(w, "Flags:\n")
 	mustFprintf(w, "  -x, --print-commands  Print commands as they are executed\n")
-	mustFprintf(w, "\n")
-	mustFprintf(w, "This command creates a `.multirepo` directory in the current directory.\n")
 	mustFprintf(w, "\n")
 	return nil
 }

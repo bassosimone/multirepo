@@ -11,7 +11,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"path/filepath"
 
 	"github.com/bassosimone/clip/pkg/flag"
 	"github.com/kballard/go-shellquote"
@@ -76,15 +75,15 @@ func (c *cmdForeach) Run(ctx context.Context, env environ, argv cliArgs) error {
 // help prints the help message for the foreach command.
 func (c *cmdForeach) help(w io.Writer) error {
 	mustFprintf(w, "\n")
-	mustFprintf(w, "foreach - %s\n", c.Description())
+	mustFprintf(w, "multirepo foreach - %s\n", c.Description())
+	mustFprintf(w, "\n")
+	mustFprintf(w, "This command executes a command in each repository.\n")
 	mustFprintf(w, "\n")
 	mustFprintf(w, "usage: multirepo foreach [-x] {repo}\n")
 	mustFprintf(w, "\n")
 	mustFprintf(w, "Flags:\n")
 	mustFprintf(w, "  -k, --keep-going      Continue executing commands even if one fails\n")
 	mustFprintf(w, "  -x, --print-commands  Print commands as they are executed\n")
-	mustFprintf(w, "\n")
-	mustFprintf(w, "This command executes a command in each repository.\n")
 	mustFprintf(w, "\n")
 	return nil
 }
@@ -129,7 +128,7 @@ func (c *cmdForeach) getopt(env environ, argv cliArgs) (*cmdForeachOptions, erro
 		return nil, fmt.Errorf("expected at least the command name")
 	}
 
-	// Add the repository names to the list of repositories to foreach.
+	// Add the command to execute.
 	options.Argv = args
 
 	// Honour the `-k` flag.
@@ -158,7 +157,7 @@ func (c *cmdForeach) execute(
 
 	// Conditionally add the `MULTIREPO_ROOT` environment variable.
 	if os.Getenv("MULTIREPO_ROOT") == "" {
-		wdir, err := os.Getwd()
+		wdir, err := env.Getwd()
 		if err != nil {
 			return err
 		}
@@ -167,11 +166,11 @@ func (c *cmdForeach) execute(
 
 	// Conditionally add the `MULTIREPO_EXECUTABLE` environment variable.
 	if os.Getenv("MULTIREPO_EXECUTABLE") == "" {
-		exe, err := os.Executable()
+		exe, err := env.Executable()
 		if err != nil {
 			return err
 		}
-		exe, err = filepath.Abs(exe)
+		exe, err = env.AbsFilepath(exe)
 		if err != nil {
 			return err
 		}

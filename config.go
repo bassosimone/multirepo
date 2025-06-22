@@ -3,9 +3,7 @@
 
 package main
 
-import (
-	"encoding/json"
-)
+import "encoding/json"
 
 // config contains the configuration.
 type config struct {

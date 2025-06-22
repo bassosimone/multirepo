@@ -60,15 +60,15 @@ func (c *cmdClone) Run(ctx context.Context, env environ, argv cliArgs) error {
 // help prints the help message for the clone command.
 func (c *cmdClone) help(w io.Writer) error {
 	mustFprintf(w, "\n")
-	mustFprintf(w, "clone - %s\n", c.Description())
+	mustFprintf(w, "multirepo clone - %s\n", c.Description())
+	mustFprintf(w, "\n")
+	mustFprintf(w, "This command clones a repository into the multirepo.\n")
 	mustFprintf(w, "\n")
 	mustFprintf(w, "usage: multirepo clone [-vx] {repo}\n")
 	mustFprintf(w, "\n")
 	mustFprintf(w, "Flags:\n")
 	mustFprintf(w, "  -v, --verbose         Print output of executed commands\n")
 	mustFprintf(w, "  -x, --print-commands  Print commands as they are executed\n")
-	mustFprintf(w, "\n")
-	mustFprintf(w, "This command clones a repository into the multirepo.\n")
 	mustFprintf(w, "\n")
 	return nil
 }
