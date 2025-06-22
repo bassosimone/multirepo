@@ -10,7 +10,7 @@ import (
 	"io"
 	"os/exec"
 
-	"github.com/bassosimone/multirepo/internal/clip"
+	"github.com/bassosimone/clip/pkg/flag"
 	"github.com/kballard/go-shellquote"
 )
 
@@ -99,7 +99,7 @@ func (c *cmdClone) getopt(env environ, argv cliArgs) (*cmdCloneOptions, error) {
 	}
 
 	// Create empty command line parser.
-	clp := clip.NewFlagSet("", clip.ContinueOnError)
+	clp := flag.NewFlagSet("", flag.ContinueOnError)
 
 	// Add the `-v` flag.
 	vflag := clp.Bool("verbose", 'v', false, "")

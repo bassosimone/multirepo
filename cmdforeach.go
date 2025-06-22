@@ -13,7 +13,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/bassosimone/multirepo/internal/clip"
+	"github.com/bassosimone/clip/pkg/flag"
 	"github.com/kballard/go-shellquote"
 )
 
@@ -111,7 +111,7 @@ func (c *cmdForeach) getopt(env environ, argv cliArgs) (*cmdForeachOptions, erro
 	}
 
 	// Create empty command line parser.
-	clp := clip.NewFlagSet("", clip.ContinueOnError)
+	clp := flag.NewFlagSet("", flag.ContinueOnError)
 
 	// Add the `-k` flag.
 	kflag := clp.Bool("keep-going", 'k', false, "")

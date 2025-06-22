@@ -7,7 +7,7 @@ import (
 	"context"
 	"io"
 
-	"github.com/bassosimone/multirepo/internal/clip"
+	"github.com/bassosimone/clip/pkg/flag"
 	"github.com/kballard/go-shellquote"
 )
 
@@ -100,7 +100,7 @@ func (c *cmdInit) getopt(env environ, argv cliArgs) (*cmdInitOptions, error) {
 	}
 
 	// Create empty command line parser.
-	clp := clip.NewFlagSet("", clip.ContinueOnError)
+	clp := flag.NewFlagSet("", flag.ContinueOnError)
 
 	// Add the `-x` flag.
 	xflag := clp.Bool("print-commands", 'x', false, "")
