@@ -79,3 +79,17 @@ This command implements the following steps:
 the `multirepo` executable.
 
 4. Executes the given `command` in each repository.
+
+## `multirepo version`
+
+Prints the version of the `multirepo` executable.
+
+For example:
+
+```bash
+multirepo version
+```
+
+This command implements the following steps:
+
+1. Prints the version of the `multirepo` executable.

@@ -4,4 +4,4 @@
 package main
 
 // Version is the version of the application.
-var Version string
+var Version string = "unknown"

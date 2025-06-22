@@ -17,7 +17,7 @@ all: multirepo
 GOOS ?= $(shell go env GOOS)
 GOARCH ?= $(shell go env GOARCH)
 VERSION ?= $(shell git describe --tags 2>/dev/null || echo "dev")
-LDFLAGS := -s -w -X github.com/bassosimone/multirepo/main.Version=$(VERSION)
+LDFLAGS := -s -w -X main.Version=$(VERSION)
 TAGS := netgo
 GOENV := CGO_ENABLED=0
 EXE ?=

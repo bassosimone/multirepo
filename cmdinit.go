@@ -5,6 +5,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"io"
 
 	"github.com/bassosimone/clip/pkg/flag"
@@ -113,6 +114,11 @@ func (c *cmdInit) getopt(env environ, argv cliArgs) (*cmdInitOptions, error) {
 	// Honour the `-x` flag.
 	if *xflag {
 		options.XWriter = env.Stderr()
+	}
+
+	// Ensure there are no positional arguments
+	if len(clp.Args()) > 0 {
+		return nil, fmt.Errorf("unexpected positional arguments: %v", clp.Args())
 	}
 
 	// Return the configuration.

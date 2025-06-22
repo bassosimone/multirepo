@@ -45,6 +45,7 @@ func (c *cmdMain) help(w io.Writer, ct commandTable) error {
 	mustFprintf(w, "\n")
 	mustFprintf(w, "commands:\n")
 	mustFprintf(w, "\n")
+	// TODO(bassosimone): sort subcommands by name
 	for cname, cmd := range ct {
 		mustFprintf(w, "\t%-10s\t%s\n", cname, cmd.Description())
 	}
@@ -60,5 +61,6 @@ func (c *cmdMain) buildCommandsTable() commandTable {
 		"clone":   &cmdClone{},
 		"foreach": &cmdForeach{},
 		"init":    &cmdInit{},
+		"version": &cmdVersion{},
 	}
 }
