@@ -1,4 +1,6 @@
 /.multirepo
 /multirepo
+/multirepo-*
 /multirepo.exe
+/multirepo-*.exe
 .DS_Store
