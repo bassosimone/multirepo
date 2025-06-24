@@ -9,14 +9,18 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/bassosimone/clip"
 	"github.com/rogpeppe/go-internal/lockedfile"
 )
 
 // lockReleaser is a function that releases a lock on the dot directory.
 type lockReleaser func()
 
-// environ is the environment in which a [command] runs.
+// environ is the execution environment extending [clip.ExecEnv].
 type environ interface {
+	// Args returns the arguments passed to the program.
+	Args() []string
+
 	// AbsFilepath returns the absolute path of the given path.
 	AbsFilepath(path string) (string, error)
 
@@ -26,11 +30,17 @@ type environ interface {
 	// Executable returns the path to the executable file.
 	Executable() (string, error)
 
+	// Exit exits the program with the given status code.
+	Exit(status int)
+
 	// FileExists checks if a file exists and is a regular file.
 	FileExists(path string) (bool, error)
 
 	// Getwd returns the current working directory.
 	Getwd() (string, error)
+
+	// LookupEnv returns the value of the environment variable named by the key.
+	LookupEnv(key string) (string, bool)
 
 	// MkdirAll creates a directory and all its parents if they do not exist.
 	MkdirAll(path string, perm os.FileMode) error
@@ -40,6 +50,9 @@ type environ interface {
 
 	// RunCommand runs the given [*exec.Cmd].
 	RunCommand(cmd *exec.Cmd) error
+
+	// SignalNotify registers a channel to receive notifications of signals.
+	SignalNotify(ch chan<- os.Signal, sig ...os.Signal)
 
 	// Stdin returns the standard input.
 	Stdin() io.Reader
@@ -54,67 +67,66 @@ type environ interface {
 	WriteFile(filename string, data []byte, perm os.FileMode) error
 }
 
+// environ implements [clip.ExecEnv].
+var _ clip.ExecEnv = (environ)(nil)
+
 // stdlibEnviron implements the [environ] interface using the standard library.
-type stdlibEnviron struct{}
+//
+// The zero value is not ready to use. Construct using [newStdlibEnviron].
+type stdlibEnviron struct {
+	*clip.StdlibExecEnv
+}
 
 var _ environ = (*stdlibEnviron)(nil)
 
+// newStdlibEnviron creates a new stdlibEnviron.
+func newStdlibEnviron() *stdlibEnviron {
+	return &stdlibEnviron{
+		StdlibExecEnv: clip.NewStdlibExecEnv(),
+	}
+}
+
 // AbsFilepath returns the absolute path of the given path.
-func (stdlibEnviron) AbsFilepath(path string) (string, error) {
+func (env *stdlibEnviron) AbsFilepath(path string) (string, error) {
 	return filepath.Abs(path)
 }
 
 // CreateLockFile implements the [environ] interface.
-func (stdlibEnviron) CreateLockFile(path string) (lockReleaser, error) {
+func (env *stdlibEnviron) CreateLockFile(path string) (lockReleaser, error) {
 	return lockedfile.MutexAt(path).Lock()
 }
 
 // Executable implements the [environ] interface.
-func (stdlibEnviron) Executable() (string, error) {
+func (env *stdlibEnviron) Executable() (string, error) {
 	return os.Executable()
 }
 
 // FileExists implements the [environ] interface.
-func (stdlibEnviron) FileExists(path string) (bool, error) {
+func (env *stdlibEnviron) FileExists(path string) (bool, error) {
 	return fsxFileExists(path)
 }
 
 // Getwd implements the [environ] interface.
-func (stdlibEnviron) Getwd() (string, error) {
+func (env *stdlibEnviron) Getwd() (string, error) {
 	return os.Getwd()
 }
 
 // MkdirAll implements the [environ] interface.
-func (stdlibEnviron) MkdirAll(path string, perm os.FileMode) error {
+func (*stdlibEnviron) MkdirAll(path string, perm os.FileMode) error {
 	return os.MkdirAll(path, perm)
 }
 
 // ReadFile implements the [environ] interface.
-func (stdlibEnviron) ReadFile(filename string) ([]byte, error) {
+func (*stdlibEnviron) ReadFile(filename string) ([]byte, error) {
 	return os.ReadFile(filename)
 }
 
 // RunCommand implements the [environ] interface.
-func (stdlibEnviron) RunCommand(cmd *exec.Cmd) error {
+func (*stdlibEnviron) RunCommand(cmd *exec.Cmd) error {
 	return cmd.Run()
 }
 
-// Stdin implements the [environ] interface.
-func (stdlibEnviron) Stdin() io.Reader {
-	return os.Stdin
-}
-
-// Stdout implements the [environ] interface.
-func (stdlibEnviron) Stdout() io.Writer {
-	return os.Stdout
-}
-
-// Stderr implements the [environ] interface.
-func (stdlibEnviron) Stderr() io.Writer {
-	return os.Stderr
-}
-
 // WriteFile implements the [environ] interface.
-func (stdlibEnviron) WriteFile(filename string, data []byte, perm os.FileMode) error {
+func (*stdlibEnviron) WriteFile(filename string, data []byte, perm os.FileMode) error {
 	return os.WriteFile(filename, data, perm)
 }

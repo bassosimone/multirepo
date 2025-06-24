@@ -9,88 +9,25 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"os/exec"
 
+	"github.com/bassosimone/clip"
+	"github.com/bassosimone/clip/pkg/assert"
 	"github.com/bassosimone/clip/pkg/flag"
 	"github.com/bassosimone/clip/pkg/parser"
 	"github.com/kballard/go-shellquote"
 )
 
+// foreachCmd is the static foreach command
+var foreachCmd = &clip.LeafCommand[environ]{
+	BriefDescriptionText: "Execute a command in each repository.",
+	RunFunc:              (&cmdForeach{}).Run,
+}
+
 // cmdForeach implements the foreach command.
-type cmdForeach struct{}
-
-var _ command = (*cmdForeach)(nil)
-
-// Description implements [command].
-func (c *cmdForeach) Description() string {
-	return "Executes a command in each repository."
-}
-
-// Run implements [command].
-func (c *cmdForeach) Run(ctx context.Context, env environ, argv cliArgs) error {
-	// Print help if requested to do so by the user.
-	if argv.ContainsHelp() {
-		return c.help(env.Stdout())
-	}
-
-	// Parse command line arguments
-	options, err := c.getopt(env, argv)
-	if err != nil {
-		mustFprintf(env.Stderr(), "multirepo foreach: %s\n", err)
-		mustFprintf(env.Stderr(), "Try `multirepo foreach --help` for help.\n")
-		return err
-	}
-
-	// Lock the multirepo dir
-	dd := defaultDotDir()
-	unlock, err := dd.lock(env)
-	if err != nil {
-		mustFprintf(env.Stderr(), "multirepo foreach: %s\n", err)
-		return err
-	}
-	defer unlock()
-
-	// Read the configuration file
-	cinfo, err := readConfig(env, dd.configFilePath())
-	if err != nil {
-		mustFprintf(env.Stderr(), "multirepo foreach: %s\n", err)
-		return err
-	}
-
-	// Execute command in each repository
-	errlist := []error{}
-	for repo := range cinfo.Repos {
-		if err := c.execute(ctx, env, options, repo); err != nil {
-			mustFprintf(env.Stderr(), "multirepo foreach: %s\n", err)
-			errlist = append(errlist, err)
-			if !options.KeepGoing {
-				break
-			}
-		}
-	}
-
-	return errors.Join(errlist...)
-}
-
-// help prints the help message for the foreach command.
-func (c *cmdForeach) help(w io.Writer) error {
-	mustFprintf(w, "\n")
-	mustFprintf(w, "multirepo foreach - %s\n", c.Description())
-	mustFprintf(w, "\n")
-	mustFprintf(w, "This command executes a command in each repository.\n")
-	mustFprintf(w, "\n")
-	mustFprintf(w, "usage: multirepo foreach [-x] {repo}\n")
-	mustFprintf(w, "\n")
-	mustFprintf(w, "Flags:\n")
-	mustFprintf(w, "  -k, --keep-going      Continue executing commands even if one fails\n")
-	mustFprintf(w, "  -x, --print-commands  Print commands as they are executed\n")
-	mustFprintf(w, "\n")
-	return nil
-}
-
-// cmdForeachOptions contains configuration for the foreach command.
-type cmdForeachOptions struct {
+type cmdForeach struct {
 	// Argv contains the command and its arguments.
 	Argv []string
 
@@ -101,61 +38,92 @@ type cmdForeachOptions struct {
 	XWriter io.Writer
 }
 
-// getopt gets command line options.
-func (c *cmdForeach) getopt(env environ, argv cliArgs) (*cmdForeachOptions, error) {
-	// Initialize the default configuration.
-	options := &cmdForeachOptions{
-		Argv:      []string{},
-		KeepGoing: false,
-		XWriter:   io.Discard,
+// Run is the entry point for the foreach command.
+func (c *cmdForeach) Run(ctx context.Context, args *clip.CommandArgs[environ]) error {
+	// Parse command line arguments
+	if err := c.getopt(args); err != nil {
+		mustFprintf(args.Env.Stderr(), "multirepo foreach: %s\n", err)
+		return err
 	}
 
+	// Lock the multirepo dir
+	dd := defaultDotDir()
+	unlock, err := dd.lock(args.Env)
+	if err != nil {
+		mustFprintf(args.Env.Stderr(), "multirepo foreach: %s\n", err)
+		return err
+	}
+	defer unlock()
+
+	// Read the configuration file
+	cinfo, err := readConfig(args.Env, dd.configFilePath())
+	if err != nil {
+		mustFprintf(args.Env.Stderr(), "multirepo foreach: %s\n", err)
+		return err
+	}
+
+	// Execute command in each repository
+	errlist := []error{}
+	for repo := range cinfo.Repos {
+		if err := c.execute(ctx, args.Env, repo); err != nil {
+			mustFprintf(args.Env.Stderr(), "multirepo foreach: %s\n", err)
+			errlist = append(errlist, err)
+			if !c.KeepGoing {
+				break
+			}
+		}
+	}
+
+	return errors.Join(errlist...)
+}
+
+// getopt gets command line options.
+func (c *cmdForeach) getopt(args *clip.CommandArgs[environ]) error {
+	// Initialize the default configuration.
+	c.Argv = []string{}
+	c.KeepGoing = false
+	c.XWriter = io.Discard
+
 	// Create empty command line parser.
-	clp := flag.NewFlagSet("", flag.ContinueOnError)
+	clp := flag.NewFlagSet(args.CommandName, flag.ContinueOnError)
+	clp.SetDescription(args.Command.BriefDescription())
+	clp.SetArgsDocs("command [args...]")
 
 	// Add the `-k` flag.
-	kflag := clp.Bool("keep-going", 'k', false, "")
+	kflag := clp.Bool("keep-going", 'k', false, "Continue iterating even if the subcommand fails.")
 
 	// Add the `-x` flag.
-	xflag := clp.Bool("print-commands", 'x', false, "")
+	xflag := clp.Bool("print-commands", 'x', false, "Log the commands we execute.")
 
 	// Disable option permuation to allow passing options to subcommands
 	clp.Parser().Flags |= parser.FlagNoPermute
 
 	// Parse the command line arguments.
-	if err := clp.Parse(argv.CommandArgs()); err != nil {
-		return nil, err
+	if err := clp.Parse(args.Args); err != nil {
+		return err
 	}
-
-	args := clp.Args()
-	if len(args) < 1 {
-		return nil, fmt.Errorf("expected at least the command name")
+	if err := clp.PositionalArgsRangeCheck(1, math.MaxInt); err != nil {
+		return err
 	}
 
 	// Add the command to execute.
-	options.Argv = args
+	c.Argv = clp.Args()
 
 	// Honour the `-k` flag.
 	if *kflag {
-		options.KeepGoing = true
+		c.KeepGoing = true
 	}
 
 	// Honour the `-x` flag.
 	if *xflag {
-		options.XWriter = env.Stderr()
+		c.XWriter = args.Env.Stderr()
 	}
 
-	// Return the configuration.
-	return options, nil
+	return nil
 }
 
 // execute executes the command in a given repository.
-func (c *cmdForeach) execute(
-	ctx context.Context,
-	env environ,
-	options *cmdForeachOptions,
-	repo string,
-) error {
+func (c *cmdForeach) execute(ctx context.Context, env environ, repo string) error {
 	// Preparing for adding to the environment variables.
 	environ := os.Environ()
 
@@ -182,8 +150,8 @@ func (c *cmdForeach) execute(
 	}
 
 	// Create the subcommand to execute.
-	assertTrue(len(options.Argv) >= 1, "expected at least the command name")
-	cmd := exec.CommandContext(ctx, options.Argv[0], options.Argv[1:]...)
+	assert.True(len(c.Argv) >= 1, "expected at least the command name")
+	cmd := exec.CommandContext(ctx, c.Argv[0], c.Argv[1:]...)
 	cmd.Stdin = io.NopCloser(bytes.NewReader(nil))
 	cmd.Stdout = env.Stdout()
 	cmd.Stderr = env.Stderr()
@@ -191,8 +159,7 @@ func (c *cmdForeach) execute(
 	cmd.Env = environ
 
 	// Log that we're executing the command.
-	mustFprintf(options.XWriter, "+ (cd %s && %s)\n", shellquote.Join(repo),
-		shellquote.Join(cmd.Args...))
+	mustFprintf(c.XWriter, "+ (cd %s && %s)\n", shellquote.Join(repo), shellquote.Join(cmd.Args...))
 
 	// Execute the command
 	return env.RunCommand(cmd)

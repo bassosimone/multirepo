@@ -10,71 +10,19 @@ import (
 	"io"
 	"os/exec"
 
+	"github.com/bassosimone/clip"
 	"github.com/bassosimone/clip/pkg/flag"
 	"github.com/kballard/go-shellquote"
 )
 
+// cloneCmd is the static clone command.
+var cloneCmd = &clip.LeafCommand[environ]{
+	BriefDescriptionText: "Clone a repository into the multirepo.",
+	RunFunc:              (&cmdClone{}).Run,
+}
+
 // cmdClone implements the clone command.
-type cmdClone struct{}
-
-var _ command = (*cmdClone)(nil)
-
-// Description implements [command].
-func (c *cmdClone) Description() string {
-	return "Clones a repository into the multirepo."
-}
-
-// Run implements [command].
-func (c *cmdClone) Run(ctx context.Context, env environ, argv cliArgs) error {
-	// Print help if requested to do so by the user.
-	if argv.ContainsHelp() {
-		return c.help(env.Stdout())
-	}
-
-	// Parse command line arguments
-	options, err := c.getopt(env, argv)
-	if err != nil {
-		mustFprintf(env.Stderr(), "multirepo clone: %s\n", err)
-		mustFprintf(env.Stderr(), "Try `multirepo clone --help` for help.\n")
-		return err
-	}
-
-	// Lock the multirepo dir
-	dd := defaultDotDir()
-	unlock, err := dd.lock(env)
-	if err != nil {
-		mustFprintf(env.Stderr(), "multirepo clone: %s\n", err)
-		return err
-	}
-	defer unlock()
-
-	// Clone the repository
-	if err := c.clone(ctx, env, options, dd, options.Repo); err != nil {
-		mustFprintf(env.Stderr(), "multirepo clone: %s\n", err)
-		return err
-	}
-
-	return nil
-}
-
-// help prints the help message for the clone command.
-func (c *cmdClone) help(w io.Writer) error {
-	mustFprintf(w, "\n")
-	mustFprintf(w, "multirepo clone - %s\n", c.Description())
-	mustFprintf(w, "\n")
-	mustFprintf(w, "This command clones a repository into the multirepo.\n")
-	mustFprintf(w, "\n")
-	mustFprintf(w, "usage: multirepo clone [-vx] {repo}\n")
-	mustFprintf(w, "\n")
-	mustFprintf(w, "Flags:\n")
-	mustFprintf(w, "  -v, --verbose         Print output of executed commands\n")
-	mustFprintf(w, "  -x, --print-commands  Print commands as they are executed\n")
-	mustFprintf(w, "\n")
-	return nil
-}
-
-// cmdCloneOptions contains configuration for the clone command.
-type cmdCloneOptions struct {
+type cmdClone struct {
 	// Repo is the repository to clone.
 	Repo string
 
@@ -88,81 +36,98 @@ type cmdCloneOptions struct {
 	XWriter io.Writer
 }
 
-// getopt gets command line options.
-func (c *cmdClone) getopt(env environ, argv cliArgs) (*cmdCloneOptions, error) {
-	// Initialize the default configuration.
-	options := &cmdCloneOptions{
-		Repo:          "",
-		VWriterStderr: io.Discard,
-		VWriterStdout: io.Discard,
-		XWriter:       io.Discard,
+// Run is the entry point for the clone command.
+func (c *cmdClone) Run(ctx context.Context, args *clip.CommandArgs[environ]) error {
+	// Parse command line arguments
+	if err := c.getopt(args); err != nil {
+		mustFprintf(args.Env.Stderr(), "multirepo clone: %s\n", err)
+		return err
 	}
+
+	// Lock the multirepo dir
+	dd := defaultDotDir()
+	unlock, err := dd.lock(args.Env)
+	if err != nil {
+		mustFprintf(args.Env.Stderr(), "multirepo clone: %s\n", err)
+		return err
+	}
+	defer unlock()
+
+	// Clone the repository
+	if err := c.clone(ctx, args.Env, dd); err != nil {
+		mustFprintf(args.Env.Stderr(), "multirepo clone: %s\n", err)
+		return err
+	}
+
+	return nil
+}
+
+// getopt gets command line options.
+func (c *cmdClone) getopt(args *clip.CommandArgs[environ]) error {
+	// Initialize the default configuration.
+	c.Repo = ""
+	c.VWriterStderr = io.Discard
+	c.VWriterStdout = io.Discard
+	c.XWriter = io.Discard
 
 	// Create empty command line parser.
-	clp := flag.NewFlagSet("", flag.ContinueOnError)
+	clp := flag.NewFlagSet(args.CommandName, flag.ContinueOnError)
+	clp.SetDescription(args.Command.BriefDescription())
+	clp.SetArgsDocs("git@github.com:user/repo")
 
 	// Add the `-v` flag.
-	vflag := clp.Bool("verbose", 'v', false, "")
+	vflag := clp.Bool("verbose", 'v', false, "Show the output of git clone.")
 
 	// Add the `-x` flag.
-	xflag := clp.Bool("print-commands", 'x', false, "")
+	xflag := clp.Bool("print-commands", 'x', false, "Log the commands we execute.")
 
 	// Parse the command line arguments.
-	if err := clp.Parse(argv.CommandArgs()); err != nil {
-		return nil, err
+	if err := clp.Parse(args.Args); err != nil {
+		return err
 	}
-
-	args := clp.Args()
-	if len(args) != 1 {
-		return nil, fmt.Errorf("expected exactly one repository")
+	if err := clp.PositionalArgsEqualCheck(1); err != nil {
+		return err
 	}
 
 	// Set the repository name to clone.
-	options.Repo = args[0]
+	c.Repo = clp.Args()[0]
 
 	// Honour the `-v` flag.
 	if *vflag {
-		options.VWriterStderr = env.Stderr()
-		options.VWriterStdout = env.Stdout()
+		c.VWriterStderr = args.Env.Stderr()
+		c.VWriterStdout = args.Env.Stdout()
 	}
 
 	// Honour the `-x` flag.
 	if *xflag {
-		options.XWriter = env.Stderr()
+		c.XWriter = args.Env.Stderr()
 	}
 
-	// Return the configuration.
-	return options, nil
+	return nil
 }
 
 // clone clones a repository.
-func (c *cmdClone) clone(
-	ctx context.Context,
-	env environ,
-	options *cmdCloneOptions,
-	dd dotDir,
-	repo string,
-) error {
+func (c *cmdClone) clone(ctx context.Context, env environ, dd dotDir) error {
 	// Read the configuration file.
 	cinfo, err := readConfig(env, dd.configFilePath())
 	if err != nil {
 		return err
 	}
 
-	// Parses the scp-like repository URL.
-	scpInfo, good := scpLikeParse(repo)
+	// Parses the scp-like URL.
+	scpInfo, good := scpLikeParse(c.Repo)
 	if !good {
-		return fmt.Errorf("invalid repository URL: %s", repo)
+		return fmt.Errorf("invalid repository URL: %s", c.Repo)
 	}
 
 	// Create the subcommand to execute.
 	cmd := exec.CommandContext(ctx, "git", "clone", scpInfo.String(), scpInfo.Name())
 	cmd.Stdin = io.NopCloser(bytes.NewReader(nil))
-	cmd.Stdout = options.VWriterStdout
-	cmd.Stderr = options.VWriterStderr
+	cmd.Stdout = c.VWriterStdout
+	cmd.Stderr = c.VWriterStderr
 
 	// Log that we're executing the command.
-	mustFprintf(options.XWriter, "+ %s\n", shellquote.Join(cmd.Args...))
+	mustFprintf(c.XWriter, "+ %s\n", shellquote.Join(cmd.Args...))
 
 	// Execute the command
 	if err := env.RunCommand(cmd); err != nil {

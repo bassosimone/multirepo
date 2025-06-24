@@ -4,35 +4,27 @@
 package main
 
 import (
-	"context"
-	"os"
+	"github.com/bassosimone/clip"
 )
-
-// errorToExitCode maps an error to an exit code.
-func errorToExitCode(err error) int {
-	emap := map[bool]int{
-		true:  1,
-		false: 0,
-	}
-	return emap[err != nil]
-}
-
-// osExit allows mocking the [os.Exit] function.
-var osExit = os.Exit
 
 func main() {
 	// Initialize the environment
-	env := &stdlibEnviron{}
+	env := newStdlibEnviron()
 
-	// Initialize the context
-	ctx := context.Background()
+	// Create root command and the related subcommands
+	root := &clip.RootCommand[environ]{
+		Command: &clip.DispatcherCommand[environ]{
+			BriefDescriptionText: "Manage multiple git repositories as a monorepo.",
+			Commands: map[string]clip.Command[environ]{
+				"clone":   cloneCmd,
+				"foreach": foreachCmd,
+				"init":    initCmd,
+				"version": versionCmd,
+			},
+		},
+		AutoCancel: true,
+	}
 
-	// Initialize the main command
-	cmd := &cmdMain{}
-
-	// Initialize the CLI args
-	argv := cliArgs(os.Args)
-
-	// Run the main command
-	osExit(errorToExitCode(cmd.Run(ctx, env, argv)))
+	// Run the root command
+	root.Main(env)
 }
