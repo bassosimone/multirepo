@@ -156,7 +156,11 @@ func (c *cmdForeachRunner) execute(ctx context.Context, env environ, repo string
 	cmd.Env = environ
 
 	// Log that we're executing the command.
-	mustFprintf(c.XWriter, "+ (cd %s && %s)\n", shellquote.Join(repo), shellquote.Join(cmd.Args...))
+	//
+	// Add a newline before each entry so that it stands out when
+	// skimming the terminal. Note that we cannot make `-x` the
+	// default, since it would be quite annoying when reading diffs
+	mustFprintf(c.XWriter, "\n+ (cd %s && %s)\n", shellquote.Join(repo), shellquote.Join(cmd.Args...))
 
 	// Execute the command
 	return env.RunCommand(cmd)
