@@ -12,23 +12,52 @@ import (
 	"github.com/kballard/go-shellquote"
 )
 
-// initCmd is the static init command
-var initCmd = &clip.LeafCommand[environ]{
+// cmdInit is the static init command
+var cmdInit = &clip.LeafCommand[environ]{
 	BriefDescriptionText: "Initialize a multirepo.",
-	RunFunc:              (&cmdInit{}).Run,
+	RunFunc:              (&cmdInitRunner{}).Run,
 }
 
-// cmdInit implements the init command.
-type cmdInit struct {
+// cmdInitRunner runs the init command.
+type cmdInitRunner struct {
 	// XWriter is the writer used to log executed commands.
 	XWriter io.Writer
 }
 
-// Run is the entry point for the init command.
-func (c *cmdInit) Run(ctx context.Context, args *clip.CommandArgs[environ]) error {
-	// Parse command line arguments
-	c.mustGetopt(args)
+// --- entry & setup ---
 
+// Run is the entry point for the init command.
+func (c *cmdInitRunner) Run(ctx context.Context, args *clip.CommandArgs[environ]) error {
+	c.mustGetopt(args)
+	return c.run(args)
+}
+
+// mustGetopt gets command line options.
+func (c *cmdInitRunner) mustGetopt(args *clip.CommandArgs[environ]) {
+	// Initialize the default configuration.
+	c.XWriter = io.Discard
+
+	// Create empty command line parser.
+	clp := flag.NewFlagSet(args.CommandName, flag.ExitOnError)
+	clp.SetDescription(args.Command.BriefDescription())
+	clp.SetArgsDocs("")
+
+	// Add the `-x` flag.
+	xflag := clp.Bool("print-commands", 'x', false, "Log the commands we execute.")
+
+	// Parse the command line arguments.
+	clip.Must(args.Env, clp.Parse(args.Args))
+	clip.Must(args.Env, clp.PositionalArgsEqualCheck(0))
+
+	// Honour the `-x` flag.
+	if *xflag {
+		c.XWriter = args.Env.Stderr()
+	}
+}
+
+// --- execution ---
+
+func (c *cmdInitRunner) run(args *clip.CommandArgs[environ]) error {
 	// Create the `.multirepo` directory
 	dd := defaultDotDir()
 	mustFprintf(c.XWriter, "+ mkdir -p %s\n", shellquote.Join(dd.String()))
@@ -62,27 +91,4 @@ func (c *cmdInit) Run(ctx context.Context, args *clip.CommandArgs[environ]) erro
 	}
 
 	return nil
-}
-
-// mustGetopt gets command line options.
-func (c *cmdInit) mustGetopt(args *clip.CommandArgs[environ]) {
-	// Initialize the default configuration.
-	c.XWriter = io.Discard
-
-	// Create empty command line parser.
-	clp := flag.NewFlagSet(args.CommandName, flag.ExitOnError)
-	clp.SetDescription(args.Command.BriefDescription())
-	clp.SetArgsDocs("")
-
-	// Add the `-x` flag.
-	xflag := clp.Bool("print-commands", 'x', false, "Log the commands we execute.")
-
-	// Parse the command line arguments.
-	clip.Must(args.Env, clp.Parse(args.Args))
-	clip.Must(args.Env, clp.PositionalArgsEqualCheck(0))
-
-	// Honour the `-x` flag.
-	if *xflag {
-		c.XWriter = args.Env.Stderr()
-	}
 }

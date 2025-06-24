@@ -20,14 +20,14 @@ import (
 	"github.com/kballard/go-shellquote"
 )
 
-// foreachCmd is the static foreach command
-var foreachCmd = &clip.LeafCommand[environ]{
+// cmdForeach is the static foreach command
+var cmdForeach = &clip.LeafCommand[environ]{
 	BriefDescriptionText: "Execute a command in each repository.",
-	RunFunc:              (&cmdForeach{}).Run,
+	RunFunc:              (&cmdForeachRunner{}).Run,
 }
 
-// cmdForeach implements the foreach command.
-type cmdForeach struct {
+// cmdForeachRunner runs the foreach command.
+type cmdForeachRunner struct {
 	// Argv contains the command and its arguments.
 	Argv []string
 
@@ -38,44 +38,16 @@ type cmdForeach struct {
 	XWriter io.Writer
 }
 
+// --- entry & setup ---
+
 // Run is the entry point for the foreach command.
-func (c *cmdForeach) Run(ctx context.Context, args *clip.CommandArgs[environ]) error {
-	// Parse command line arguments
+func (c *cmdForeachRunner) Run(ctx context.Context, args *clip.CommandArgs[environ]) error {
 	c.mustGetopt(args)
-
-	// Lock the multirepo dir
-	dd := defaultDotDir()
-	unlock, err := dd.lock(args.Env)
-	if err != nil {
-		mustFprintf(args.Env.Stderr(), "multirepo foreach: %s\n", err)
-		return err
-	}
-	defer unlock()
-
-	// Read the configuration file
-	cinfo, err := readConfig(args.Env, dd.configFilePath())
-	if err != nil {
-		mustFprintf(args.Env.Stderr(), "multirepo foreach: %s\n", err)
-		return err
-	}
-
-	// Execute command in each repository
-	errlist := []error{}
-	for repo := range cinfo.Repos {
-		if err := c.execute(ctx, args.Env, repo); err != nil {
-			mustFprintf(args.Env.Stderr(), "multirepo foreach: %s\n", err)
-			errlist = append(errlist, err)
-			if !c.KeepGoing {
-				break
-			}
-		}
-	}
-
-	return errors.Join(errlist...)
+	return c.run(ctx, args)
 }
 
 // mustGetopt gets command line options.
-func (c *cmdForeach) mustGetopt(args *clip.CommandArgs[environ]) {
+func (c *cmdForeachRunner) mustGetopt(args *clip.CommandArgs[environ]) {
 	// Initialize the default configuration.
 	c.Argv = []string{}
 	c.KeepGoing = false
@@ -113,8 +85,42 @@ func (c *cmdForeach) mustGetopt(args *clip.CommandArgs[environ]) {
 	}
 }
 
+// --- execution ---
+
+func (c *cmdForeachRunner) run(ctx context.Context, args *clip.CommandArgs[environ]) error {
+	// Lock the multirepo dir
+	dd := defaultDotDir()
+	unlock, err := dd.lock(args.Env)
+	if err != nil {
+		mustFprintf(args.Env.Stderr(), "multirepo foreach: %s\n", err)
+		return err
+	}
+	defer unlock()
+
+	// Read the configuration file
+	cinfo, err := readConfig(args.Env, dd.configFilePath())
+	if err != nil {
+		mustFprintf(args.Env.Stderr(), "multirepo foreach: %s\n", err)
+		return err
+	}
+
+	// Execute command in each repository
+	errlist := []error{}
+	for repo := range cinfo.Repos {
+		if err := c.execute(ctx, args.Env, repo); err != nil {
+			mustFprintf(args.Env.Stderr(), "multirepo foreach: %s\n", err)
+			errlist = append(errlist, err)
+			if !c.KeepGoing {
+				break
+			}
+		}
+	}
+
+	return errors.Join(errlist...)
+}
+
 // execute executes the command in a given repository.
-func (c *cmdForeach) execute(ctx context.Context, env environ, repo string) error {
+func (c *cmdForeachRunner) execute(ctx context.Context, env environ, repo string) error {
 	// Preparing for adding to the environment variables.
 	environ := os.Environ()
 

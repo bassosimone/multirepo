@@ -14,10 +14,10 @@ func main() {
 		Command: &clip.DispatcherCommand[environ]{
 			BriefDescriptionText: "Manage multiple git repositories as a monorepo.",
 			Commands: map[string]clip.Command[environ]{
-				"clone":   cloneCmd,
-				"foreach": foreachCmd,
-				"init":    initCmd,
-				"version": versionCmd,
+				"clone":   cmdClone,
+				"foreach": cmdForeach,
+				"init":    cmdInit,
+				"version": cmdVersion,
 			},
 			ErrorHandling: clip.ExitOnError,
 		},

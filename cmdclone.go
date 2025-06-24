@@ -15,14 +15,14 @@ import (
 	"github.com/kballard/go-shellquote"
 )
 
-// cloneCmd is the static clone command.
-var cloneCmd = &clip.LeafCommand[environ]{
+// cmdClone is the static clone command.
+var cmdClone = &clip.LeafCommand[environ]{
 	BriefDescriptionText: "Clone a repository into the multirepo.",
-	RunFunc:              (&cmdClone{}).Run,
+	RunFunc:              (&cmdCloneRunner{}).Run,
 }
 
-// cmdClone implements the clone command.
-type cmdClone struct {
+// cmdCloneRunner runs the clone command.
+type cmdCloneRunner struct {
 	// Repo is the repository to clone.
 	Repo string
 
@@ -36,31 +36,16 @@ type cmdClone struct {
 	XWriter io.Writer
 }
 
+// --- entry & setup ---
+
 // Run is the entry point for the clone command.
-func (c *cmdClone) Run(ctx context.Context, args *clip.CommandArgs[environ]) error {
-	// Parse command line arguments
+func (c *cmdCloneRunner) Run(ctx context.Context, args *clip.CommandArgs[environ]) error {
 	c.mustGetopt(args)
-
-	// Lock the multirepo dir
-	dd := defaultDotDir()
-	unlock, err := dd.lock(args.Env)
-	if err != nil {
-		mustFprintf(args.Env.Stderr(), "multirepo clone: %s\n", err)
-		return err
-	}
-	defer unlock()
-
-	// Clone the repository
-	if err := c.clone(ctx, args.Env, dd); err != nil {
-		mustFprintf(args.Env.Stderr(), "multirepo clone: %s\n", err)
-		return err
-	}
-
-	return nil
+	return c.run(ctx, args)
 }
 
 // mustGetopt gets command line options.
-func (c *cmdClone) mustGetopt(args *clip.CommandArgs[environ]) {
+func (c *cmdCloneRunner) mustGetopt(args *clip.CommandArgs[environ]) {
 	// Initialize the default configuration.
 	c.Repo = ""
 	c.VWriterStderr = io.Discard
@@ -97,8 +82,29 @@ func (c *cmdClone) mustGetopt(args *clip.CommandArgs[environ]) {
 	}
 }
 
+// --- execution ---
+
+func (c *cmdCloneRunner) run(ctx context.Context, args *clip.CommandArgs[environ]) error {
+	// Lock the multirepo dir
+	dd := defaultDotDir()
+	unlock, err := dd.lock(args.Env)
+	if err != nil {
+		mustFprintf(args.Env.Stderr(), "multirepo clone: %s\n", err)
+		return err
+	}
+	defer unlock()
+
+	// Clone the repository
+	if err := c.clone(ctx, args.Env, dd); err != nil {
+		mustFprintf(args.Env.Stderr(), "multirepo clone: %s\n", err)
+		return err
+	}
+
+	return nil
+}
+
 // clone clones a repository.
-func (c *cmdClone) clone(ctx context.Context, env environ, dd dotDir) error {
+func (c *cmdCloneRunner) clone(ctx context.Context, env environ, dd dotDir) error {
 	// Read the configuration file.
 	cinfo, err := readConfig(env, dd.configFilePath())
 	if err != nil {

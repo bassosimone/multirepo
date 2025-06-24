@@ -10,27 +10,24 @@ import (
 	"github.com/bassosimone/clip/pkg/flag"
 )
 
-// versionCmd is the static version command
-var versionCmd = &clip.LeafCommand[environ]{
+// cmdVersion is the static version command
+var cmdVersion = &clip.LeafCommand[environ]{
 	BriefDescriptionText: "Display the version of the tool.",
-	RunFunc:              (&cmdVersion{}).Run,
+	RunFunc:              (&cmdVersionRunner{}).Run,
 }
 
-// cmdVersion implements the version command.
-type cmdVersion struct{}
+// cmdVersionRunner runs the version command.
+type cmdVersionRunner struct{}
 
 // Run is the entry point for the version command.
-func (c *cmdVersion) Run(ctx context.Context, args *clip.CommandArgs[environ]) error {
-	// Parse command line arguments
+func (c *cmdVersionRunner) Run(ctx context.Context, args *clip.CommandArgs[environ]) error {
 	c.mustGetopt(args)
-
-	// Print version information
 	mustFprintf(args.Env.Stdout(), "%s\n", Version)
 	return nil
 }
 
 // mustGetopt gets command line options.
-func (c *cmdVersion) mustGetopt(args *clip.CommandArgs[environ]) {
+func (c *cmdVersionRunner) mustGetopt(args *clip.CommandArgs[environ]) {
 	// Create empty command line parser.
 	clp := flag.NewFlagSet(args.CommandName, flag.ExitOnError)
 	clp.SetDescription(args.Command.BriefDescription())
