@@ -41,10 +41,7 @@ type cmdForeach struct {
 // Run is the entry point for the foreach command.
 func (c *cmdForeach) Run(ctx context.Context, args *clip.CommandArgs[environ]) error {
 	// Parse command line arguments
-	if err := c.getopt(args); err != nil {
-		mustFprintf(args.Env.Stderr(), "multirepo foreach: %s\n", err)
-		return err
-	}
+	c.mustGetopt(args)
 
 	// Lock the multirepo dir
 	dd := defaultDotDir()
@@ -77,15 +74,15 @@ func (c *cmdForeach) Run(ctx context.Context, args *clip.CommandArgs[environ]) e
 	return errors.Join(errlist...)
 }
 
-// getopt gets command line options.
-func (c *cmdForeach) getopt(args *clip.CommandArgs[environ]) error {
+// mustGetopt gets command line options.
+func (c *cmdForeach) mustGetopt(args *clip.CommandArgs[environ]) {
 	// Initialize the default configuration.
 	c.Argv = []string{}
 	c.KeepGoing = false
 	c.XWriter = io.Discard
 
 	// Create empty command line parser.
-	clp := flag.NewFlagSet(args.CommandName, flag.ContinueOnError)
+	clp := flag.NewFlagSet(args.CommandName, flag.ExitOnError)
 	clp.SetDescription(args.Command.BriefDescription())
 	clp.SetArgsDocs("command [args...]")
 
@@ -99,12 +96,8 @@ func (c *cmdForeach) getopt(args *clip.CommandArgs[environ]) error {
 	clp.Parser().Flags |= parser.FlagNoPermute
 
 	// Parse the command line arguments.
-	if err := clp.Parse(args.Args); err != nil {
-		return err
-	}
-	if err := clp.PositionalArgsRangeCheck(1, math.MaxInt); err != nil {
-		return err
-	}
+	clip.Must(args.Env, clp.Parse(args.Args))
+	clip.Must(args.Env, clp.PositionalArgsRangeCheck(1, math.MaxInt))
 
 	// Add the command to execute.
 	c.Argv = clp.Args()
@@ -118,8 +111,6 @@ func (c *cmdForeach) getopt(args *clip.CommandArgs[environ]) error {
 	if *xflag {
 		c.XWriter = args.Env.Stderr()
 	}
-
-	return nil
 }
 
 // execute executes the command in a given repository.

@@ -3,9 +3,7 @@
 
 package main
 
-import (
-	"github.com/bassosimone/clip"
-)
+import "github.com/bassosimone/clip"
 
 func main() {
 	// Initialize the environment
@@ -21,6 +19,7 @@ func main() {
 				"init":    initCmd,
 				"version": versionCmd,
 			},
+			ErrorHandling: clip.ExitOnError,
 		},
 		AutoCancel: true,
 	}

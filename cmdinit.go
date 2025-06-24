@@ -27,10 +27,7 @@ type cmdInit struct {
 // Run is the entry point for the init command.
 func (c *cmdInit) Run(ctx context.Context, args *clip.CommandArgs[environ]) error {
 	// Parse command line arguments
-	if err := c.getopt(args); err != nil {
-		mustFprintf(args.Env.Stderr(), "multirepo init: %s\n", err)
-		return err
-	}
+	c.mustGetopt(args)
 
 	// Create the `.multirepo` directory
 	dd := defaultDotDir()
@@ -67,13 +64,13 @@ func (c *cmdInit) Run(ctx context.Context, args *clip.CommandArgs[environ]) erro
 	return nil
 }
 
-// getopt gets command line options.
-func (c *cmdInit) getopt(args *clip.CommandArgs[environ]) error {
+// mustGetopt gets command line options.
+func (c *cmdInit) mustGetopt(args *clip.CommandArgs[environ]) {
 	// Initialize the default configuration.
 	c.XWriter = io.Discard
 
 	// Create empty command line parser.
-	clp := flag.NewFlagSet(args.CommandName, flag.ContinueOnError)
+	clp := flag.NewFlagSet(args.CommandName, flag.ExitOnError)
 	clp.SetDescription(args.Command.BriefDescription())
 	clp.SetArgsDocs("")
 
@@ -81,17 +78,11 @@ func (c *cmdInit) getopt(args *clip.CommandArgs[environ]) error {
 	xflag := clp.Bool("print-commands", 'x', false, "Log the commands we execute.")
 
 	// Parse the command line arguments.
-	if err := clp.Parse(args.Args); err != nil {
-		return err
-	}
-	if err := clp.PositionalArgsEqualCheck(0); err != nil {
-		return err
-	}
+	clip.Must(args.Env, clp.Parse(args.Args))
+	clip.Must(args.Env, clp.PositionalArgsEqualCheck(0))
 
 	// Honour the `-x` flag.
 	if *xflag {
 		c.XWriter = args.Env.Stderr()
 	}
-
-	return nil
 }

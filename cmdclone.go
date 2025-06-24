@@ -39,10 +39,7 @@ type cmdClone struct {
 // Run is the entry point for the clone command.
 func (c *cmdClone) Run(ctx context.Context, args *clip.CommandArgs[environ]) error {
 	// Parse command line arguments
-	if err := c.getopt(args); err != nil {
-		mustFprintf(args.Env.Stderr(), "multirepo clone: %s\n", err)
-		return err
-	}
+	c.mustGetopt(args)
 
 	// Lock the multirepo dir
 	dd := defaultDotDir()
@@ -62,8 +59,8 @@ func (c *cmdClone) Run(ctx context.Context, args *clip.CommandArgs[environ]) err
 	return nil
 }
 
-// getopt gets command line options.
-func (c *cmdClone) getopt(args *clip.CommandArgs[environ]) error {
+// mustGetopt gets command line options.
+func (c *cmdClone) mustGetopt(args *clip.CommandArgs[environ]) {
 	// Initialize the default configuration.
 	c.Repo = ""
 	c.VWriterStderr = io.Discard
@@ -71,7 +68,7 @@ func (c *cmdClone) getopt(args *clip.CommandArgs[environ]) error {
 	c.XWriter = io.Discard
 
 	// Create empty command line parser.
-	clp := flag.NewFlagSet(args.CommandName, flag.ContinueOnError)
+	clp := flag.NewFlagSet(args.CommandName, flag.ExitOnError)
 	clp.SetDescription(args.Command.BriefDescription())
 	clp.SetArgsDocs("git@github.com:user/repo")
 
@@ -82,12 +79,8 @@ func (c *cmdClone) getopt(args *clip.CommandArgs[environ]) error {
 	xflag := clp.Bool("print-commands", 'x', false, "Log the commands we execute.")
 
 	// Parse the command line arguments.
-	if err := clp.Parse(args.Args); err != nil {
-		return err
-	}
-	if err := clp.PositionalArgsEqualCheck(1); err != nil {
-		return err
-	}
+	clip.Must(args.Env, clp.Parse(args.Args))
+	clip.Must(args.Env, clp.PositionalArgsEqualCheck(1))
 
 	// Set the repository name to clone.
 	c.Repo = clp.Args()[0]
@@ -102,8 +95,6 @@ func (c *cmdClone) getopt(args *clip.CommandArgs[environ]) error {
 	if *xflag {
 		c.XWriter = args.Env.Stderr()
 	}
-
-	return nil
 }
 
 // clone clones a repository.
