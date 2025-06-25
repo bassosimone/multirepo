@@ -30,6 +30,12 @@ Executing a command within the multirepo:
 multirepo foreach git status -v
 ```
 
+Getting interactive help:
+
+```bash
+multirepo --help
+```
+
 ## Minimum Supported Go Version
 
 Go 1.24
@@ -67,6 +73,8 @@ make release
 ## Dependencies
 
 - [github.com/bassosimone/clip](https://pkg.go.dev/github.com/bassosimone/clip)
+
+- [github.com/charmbracelet/lipgloss](https://pkg.go.dev/github.com/charmbracelet/lipgloss)
 
 - [github.com/kballard/go-shellquote](https://pkg.go.dev/github.com/kballard/go-shellquote)
 

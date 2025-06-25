@@ -34,6 +34,9 @@ type cmdForeachRunner struct {
 	// KeepGoing indicates whether to continue executing commands even if one fails.
 	KeepGoing bool
 
+	// Style is the nil-safe lipgloss style to use.
+	Style *nilSafeLipglossStyle
+
 	// XWriter is the writer used to log executed commands.
 	XWriter io.Writer
 }
@@ -51,6 +54,7 @@ func (c *cmdForeachRunner) mustGetopt(args *clip.CommandArgs[environ]) {
 	// Initialize the default configuration.
 	c.Argv = []string{}
 	c.KeepGoing = false
+	c.Style = nil
 	c.XWriter = io.Discard
 
 	// Create empty command line parser.
@@ -82,6 +86,7 @@ func (c *cmdForeachRunner) mustGetopt(args *clip.CommandArgs[environ]) {
 	// Honour the `-x` flag.
 	if *xflag {
 		c.XWriter = args.Env.Stderr()
+		c.Style = newNilSafeLipglossStyle()
 	}
 }
 
@@ -130,7 +135,9 @@ func (c *cmdForeachRunner) execute(ctx context.Context, env environ, repo string
 		if err != nil {
 			return err
 		}
-		environ = append(environ, fmt.Sprintf("MULTIREPO_ROOT=%s", wdir))
+		variable := fmt.Sprintf("MULTIREPO_ROOT=%s", wdir)
+		environ = append(environ, variable)
+		mustFprintf(c.XWriter, "\n%s\n", c.Style.Renderf("+ export %s", variable))
 	}
 
 	// Conditionally add the `MULTIREPO_EXECUTABLE` environment variable.
@@ -143,7 +150,9 @@ func (c *cmdForeachRunner) execute(ctx context.Context, env environ, repo string
 		if err != nil {
 			return err
 		}
-		environ = append(environ, fmt.Sprintf("MULTIREPO_EXECUTABLE=%s", exe))
+		variable := fmt.Sprintf("MULTIREPO_EXECUTABLE=%s", exe)
+		environ = append(environ, variable)
+		mustFprintf(c.XWriter, "%s\n", c.Style.Renderf("+ export %s", variable))
 	}
 
 	// Create the subcommand to execute.
@@ -160,7 +169,7 @@ func (c *cmdForeachRunner) execute(ctx context.Context, env environ, repo string
 	// Add a newline before each entry so that it stands out when
 	// skimming the terminal. Note that we cannot make `-x` the
 	// default, since it would be quite annoying when reading diffs
-	mustFprintf(c.XWriter, "\n+ (cd %s && %s)\n", shellquote.Join(repo), shellquote.Join(cmd.Args...))
+	mustFprintf(c.XWriter, "%s\n", c.Style.Renderf("+ (cd %s && %s)", shellquote.Join(repo), shellquote.Join(cmd.Args...)))
 
 	// Execute the command
 	return env.RunCommand(cmd)

@@ -20,6 +20,9 @@ var cmdInit = &clip.LeafCommand[environ]{
 
 // cmdInitRunner runs the init command.
 type cmdInitRunner struct {
+	// Style is the nil-safe libgloss style to use.
+	Style *nilSafeLipglossStyle
+
 	// XWriter is the writer used to log executed commands.
 	XWriter io.Writer
 }
@@ -36,6 +39,7 @@ func (c *cmdInitRunner) Run(ctx context.Context, args *clip.CommandArgs[environ]
 func (c *cmdInitRunner) mustGetopt(args *clip.CommandArgs[environ]) {
 	// Initialize the default configuration.
 	c.XWriter = io.Discard
+	c.Style = nil
 
 	// Create empty command line parser.
 	clp := flag.NewFlagSet(args.CommandName, flag.ExitOnError)
@@ -52,6 +56,7 @@ func (c *cmdInitRunner) mustGetopt(args *clip.CommandArgs[environ]) {
 	// Honour the `-x` flag.
 	if *xflag {
 		c.XWriter = args.Env.Stderr()
+		c.Style = newNilSafeLipglossStyle()
 	}
 }
 
@@ -60,7 +65,7 @@ func (c *cmdInitRunner) mustGetopt(args *clip.CommandArgs[environ]) {
 func (c *cmdInitRunner) run(args *clip.CommandArgs[environ]) error {
 	// Create the `.multirepo` directory
 	dd := defaultDotDir()
-	mustFprintf(c.XWriter, "+ mkdir -p %s\n", shellquote.Join(dd.String()))
+	mustFprintf(c.XWriter, "%s\n", c.Style.Renderf("+ mkdir -p %s", shellquote.Join(dd.String())))
 	if err := args.Env.MkdirAll(dd.String(), 0700); err != nil {
 		mustFprintf(args.Env.Stderr(), "multirepo init: %s\n", err.Error())
 		return err
@@ -83,7 +88,7 @@ func (c *cmdInitRunner) run(args *clip.CommandArgs[environ]) error {
 
 	// Write the initial configuration file
 	if !exists {
-		mustFprintf(c.XWriter, "+ echo '{}' > %s\n", shellquote.Join(dd.configFilePath()))
+		mustFprintf(c.XWriter, "%s\n", c.Style.Renderf("+ echo '{}' > %s", shellquote.Join(dd.configFilePath())))
 		if err := args.Env.WriteFile(dd.configFilePath(), []byte("{}\n"), 0600); err != nil {
 			mustFprintf(args.Env.Stderr(), "multirepo init: %s\n", err.Error())
 			return err

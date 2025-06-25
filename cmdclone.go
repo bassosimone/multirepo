@@ -26,6 +26,9 @@ type cmdCloneRunner struct {
 	// Repo is the repository to clone.
 	Repo string
 
+	// Style is the nil-safe lipgloss style to use.
+	Style *nilSafeLipglossStyle
+
 	// VWriterStderr is the writer executed to log the executed commands stderr.
 	VWriterStderr io.Writer
 
@@ -48,6 +51,7 @@ func (c *cmdCloneRunner) Run(ctx context.Context, args *clip.CommandArgs[environ
 func (c *cmdCloneRunner) mustGetopt(args *clip.CommandArgs[environ]) {
 	// Initialize the default configuration.
 	c.Repo = ""
+	c.Style = nil
 	c.VWriterStderr = io.Discard
 	c.VWriterStdout = io.Discard
 	c.XWriter = io.Discard
@@ -79,6 +83,7 @@ func (c *cmdCloneRunner) mustGetopt(args *clip.CommandArgs[environ]) {
 	// Honour the `-x` flag.
 	if *xflag {
 		c.XWriter = args.Env.Stderr()
+		c.Style = newNilSafeLipglossStyle()
 	}
 }
 
@@ -124,7 +129,7 @@ func (c *cmdCloneRunner) clone(ctx context.Context, env environ, dd dotDir) erro
 	cmd.Stderr = c.VWriterStderr
 
 	// Log that we're executing the command.
-	mustFprintf(c.XWriter, "+ %s\n", shellquote.Join(cmd.Args...))
+	mustFprintf(c.XWriter, "%s\n", c.Style.Renderf("+ %s", shellquote.Join(cmd.Args...)))
 
 	// Execute the command
 	if err := env.RunCommand(cmd); err != nil {
