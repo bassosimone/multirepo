@@ -139,7 +139,6 @@ func (c *cmdForeachRunner) execute(ctx context.Context, env environ, repo string
 		}
 		variable := fmt.Sprintf("MULTIREPO_ROOT=%s", wdir)
 		environ = append(environ, variable)
-		mustFprintf(c.XWriter, "\n%s\n", c.Style.Renderf("+ export %s", variable))
 	}
 
 	// Conditionally add the `MULTIREPO_EXECUTABLE` environment variable.
@@ -154,7 +153,6 @@ func (c *cmdForeachRunner) execute(ctx context.Context, env environ, repo string
 		}
 		variable := fmt.Sprintf("MULTIREPO_EXECUTABLE=%s", exe)
 		environ = append(environ, variable)
-		mustFprintf(c.XWriter, "%s\n", c.Style.Renderf("+ export %s", variable))
 	}
 
 	// As an optimization, if we're running `git`, prepend the
