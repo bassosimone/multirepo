@@ -61,7 +61,7 @@ func mustNewCmdForeachRunner(args *clip.CommandArgs[environ]) *cmdForeachRunner 
 	// Create empty command line parser.
 	clp := flag.NewFlagSet(args.CommandName, flag.ExitOnError)
 	clp.SetDescription(args.Command.BriefDescription())
-	clp.SetArgsDocs("command [args...]")
+	clp.SetArgsDocs("<command> [args...]")
 
 	// Add the `-k` flag.
 	kflag := clp.Bool("keep-going", 'k', "Continue iterating even if the subcommand fails.")

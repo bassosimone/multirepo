@@ -7,7 +7,7 @@ require github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 require github.com/rogpeppe/go-internal v1.14.1
 
 require (
-	github.com/bassosimone/clip v0.4.0
+	github.com/bassosimone/clip v0.5.0
 	github.com/charmbracelet/lipgloss v1.1.0
 )
 

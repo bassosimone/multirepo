@@ -17,6 +17,14 @@ func main() {
 				"clone":   cmdClone,
 				"foreach": cmdForeach,
 				"init":    cmdInit,
+				"repo": &clip.DispatcherCommand[environ]{
+					BriefDescriptionText: "Add/remove repositories from the multirepo index.",
+					Commands: map[string]clip.Command[environ]{
+						"rm": cmdRepoRm,
+					},
+					ErrorHandling: clip.ExitOnError,
+					Version:       Version,
+				},
 			},
 			ErrorHandling: clip.ExitOnError,
 			Version:       Version,
