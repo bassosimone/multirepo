@@ -94,7 +94,10 @@ This command implements the following steps:
 3. Sets the `MULTIREPO_EXECUTABLE` environment variable to the path of
 the `multirepo` executable.
 
-4. Executes the given `command` in each repository.
+4. If the command is `git`, add `--no-pager` as the first argument
+for usability (otherwise, `multirepo foreach git branch` is unusable).
+
+5. Executes the given `command` in each repository.
 
 
 ## `multirepo repo add <dir> ...`
