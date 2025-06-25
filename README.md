@@ -24,7 +24,20 @@ Cloning a repository within the multirepo:
 multirepo clone git@github.com:rbmk-project/rbmk
 ```
 
-Executing a command within the multirepo:
+Removing a repository from the multirepo index (without deleting
+the directory containing the repository):
+
+```bash
+multirepo repo rm rbmk
+```
+
+Adding an existing repository to the multirepo:
+
+```bash
+multirepo repo add rbmk
+```
+
+Executing a command for each repository in the multirepo:
 
 ```bash
 multirepo foreach git status -v
