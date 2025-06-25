@@ -19,14 +19,21 @@ type repoInfo struct {
 
 // readConfig reads the configuration from a file.
 func readConfig(env environ, filename string) (*config, error) {
+	// read the file from the disk
 	data, err := env.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
 
+	// attempt to parse to JSON
 	var cfg config
 	if err := json.Unmarshal(data, &cfg); err != nil {
 		return nil, err
+	}
+
+	// ensure the map is not empty
+	if cfg.Repos == nil {
+		cfg.Repos = make(map[string]repoInfo)
 	}
 
 	return &cfg, nil
@@ -38,11 +45,8 @@ func (cfg *config) WriteFile(env environ, filename string) error {
 	return env.WriteFile(filename, data, 0644)
 }
 
-// AddRepo adds a repository to the configuration.
+// AddRepo is a convenience method to add a repository to the configuration.
 func (cfg *config) AddRepo(name, url string) error {
-	if cfg.Repos == nil {
-		cfg.Repos = make(map[string]repoInfo)
-	}
 	cfg.Repos[name] = repoInfo{URL: url}
 	return nil
 }

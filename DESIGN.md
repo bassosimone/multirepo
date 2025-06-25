@@ -97,14 +97,14 @@ the `multirepo` executable.
 4. Executes the given `command` in each repository.
 
 
-## `multirepo repo add <dir>`
+## `multirepo repo add <dir> ...`
 
-Adds an existing repository in the current directory to the multirepo.
+Adds one or more existing repository in the current directory to the multirepo.
 
 For example:
 
 ```bash
-multirepo repo add probe-cli
+multirepo repo add probe-cli probe-android probe-ios
 ```
 
 This command implements the following steps:

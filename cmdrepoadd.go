@@ -25,7 +25,7 @@ var cmdRepoAdd = &clip.LeafCommand[environ]{
 // cmdRepoAddRunner runs the 'repo add' command.
 type cmdRepoAddRunner struct {
 	// Repo is the repository directory name to add.
-	Repo string
+	Repos []string
 
 	// Style is the nil-safe lipgloss style to use.
 	Style *nilSafeLipglossStyle
@@ -45,7 +45,7 @@ func cmdRepoAddMain(ctx context.Context, args *clip.CommandArgs[environ]) error 
 func mustNewCmdRepoAddRunner(args *clip.CommandArgs[environ]) *cmdRepoAddRunner {
 	// Initialize the default configuration.
 	c := &cmdRepoAddRunner{
-		Repo:    "",
+		Repos:   []string{},
 		Style:   nil,
 		XWriter: io.Discard,
 	}
@@ -69,7 +69,7 @@ func mustNewCmdRepoAddRunner(args *clip.CommandArgs[environ]) *cmdRepoAddRunner 
 	}
 
 	// Add the repo to add to the multirepo index.
-	c.Repo = fset.Args()[0]
+	c.Repos = fset.Args()
 
 	return c
 }
@@ -93,15 +93,18 @@ func (c *cmdRepoAddRunner) run(ctx context.Context, args *clip.CommandArgs[envir
 		return err
 	}
 
-	// Obtain the URL
-	URL, err := c.getrepourl(ctx, args.Env, c.Repo)
-	if err != nil {
-		mustFprintf(args.Env.Stderr(), "multirepo repo add: %s\n", err)
-		return err
-	}
+	// Iterate over the repositories
+	for _, repo := range c.Repos {
+		// Obtain the URL
+		URL, err := c.getrepourl(ctx, args.Env, repo)
+		if err != nil {
+			mustFprintf(args.Env.Stderr(), "multirepo repo add: %s\n", err)
+			return err
+		}
 
-	// Update the config
-	config.Repos[c.Repo] = repoInfo{URL: URL}
+		// Update the config
+		config.AddRepo(repo, URL)
+	}
 
 	// Write the configuration file back to disk
 	if err := config.WriteFile(args.Env, dd.configFilePath()); err != nil {
