@@ -18,7 +18,7 @@ import (
 // cmdClone is the static clone command.
 var cmdClone = &clip.LeafCommand[environ]{
 	BriefDescriptionText: "Clone a repository into the multirepo.",
-	RunFunc:              (&cmdCloneRunner{}).Run,
+	RunFunc:              cmdCloneMain,
 }
 
 // cmdCloneRunner runs the clone command.
@@ -41,20 +41,21 @@ type cmdCloneRunner struct {
 
 // --- entry & setup ---
 
-// Run is the entry point for the clone command.
-func (c *cmdCloneRunner) Run(ctx context.Context, args *clip.CommandArgs[environ]) error {
-	c.mustGetopt(args)
-	return c.run(ctx, args)
+// cmdCloneMain is the entry point for the clone command.
+func cmdCloneMain(ctx context.Context, args *clip.CommandArgs[environ]) error {
+	return mustNewCmdCloneRunner(args).run(ctx, args)
 }
 
-// mustGetopt gets command line options.
-func (c *cmdCloneRunner) mustGetopt(args *clip.CommandArgs[environ]) {
+// mustNewCmdCloneRunner creates a new [*cmdCloneRunner].
+func mustNewCmdCloneRunner(args *clip.CommandArgs[environ]) *cmdCloneRunner {
 	// Initialize the default configuration.
-	c.Repo = ""
-	c.Style = nil
-	c.VWriterStderr = io.Discard
-	c.VWriterStdout = io.Discard
-	c.XWriter = io.Discard
+	c := &cmdCloneRunner{
+		Repo:          "",
+		Style:         nil,
+		VWriterStderr: io.Discard,
+		VWriterStdout: io.Discard,
+		XWriter:       io.Discard,
+	}
 
 	// Create empty command line parser.
 	clp := flag.NewFlagSet(args.CommandName, flag.ExitOnError)
@@ -85,6 +86,8 @@ func (c *cmdCloneRunner) mustGetopt(args *clip.CommandArgs[environ]) {
 		c.XWriter = args.Env.Stderr()
 		c.Style = newNilSafeLipglossStyle()
 	}
+
+	return c
 }
 
 // --- execution ---

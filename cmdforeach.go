@@ -23,7 +23,7 @@ import (
 // cmdForeach is the static foreach command
 var cmdForeach = &clip.LeafCommand[environ]{
 	BriefDescriptionText: "Execute a command in each repository.",
-	RunFunc:              (&cmdForeachRunner{}).Run,
+	RunFunc:              cmdForeachMain,
 }
 
 // cmdForeachRunner runs the foreach command.
@@ -43,19 +43,20 @@ type cmdForeachRunner struct {
 
 // --- entry & setup ---
 
-// Run is the entry point for the foreach command.
-func (c *cmdForeachRunner) Run(ctx context.Context, args *clip.CommandArgs[environ]) error {
-	c.mustGetopt(args)
-	return c.run(ctx, args)
+// cmdForeachMain is the entry point for the foreach command.
+func cmdForeachMain(ctx context.Context, args *clip.CommandArgs[environ]) error {
+	return mustNewCmdForeachRunner(args).run(ctx, args)
 }
 
-// mustGetopt gets command line options.
-func (c *cmdForeachRunner) mustGetopt(args *clip.CommandArgs[environ]) {
+// mustNewCmdForeachRunner creates a new [*cmdForeachRunner].
+func mustNewCmdForeachRunner(args *clip.CommandArgs[environ]) *cmdForeachRunner {
 	// Initialize the default configuration.
-	c.Argv = []string{}
-	c.KeepGoing = false
-	c.Style = nil
-	c.XWriter = io.Discard
+	c := &cmdForeachRunner{
+		Argv:      []string{},
+		KeepGoing: false,
+		Style:     nil,
+		XWriter:   io.Discard,
+	}
 
 	// Create empty command line parser.
 	clp := flag.NewFlagSet(args.CommandName, flag.ExitOnError)
@@ -88,6 +89,8 @@ func (c *cmdForeachRunner) mustGetopt(args *clip.CommandArgs[environ]) {
 		c.XWriter = args.Env.Stderr()
 		c.Style = newNilSafeLipglossStyle()
 	}
+
+	return c
 }
 
 // --- execution ---

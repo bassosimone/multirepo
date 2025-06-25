@@ -15,7 +15,7 @@ import (
 // cmdInit is the static init command
 var cmdInit = &clip.LeafCommand[environ]{
 	BriefDescriptionText: "Initialize a multirepo.",
-	RunFunc:              (&cmdInitRunner{}).Run,
+	RunFunc:              cmdInitMain,
 }
 
 // cmdInitRunner runs the init command.
@@ -29,17 +29,18 @@ type cmdInitRunner struct {
 
 // --- entry & setup ---
 
-// Run is the entry point for the init command.
-func (c *cmdInitRunner) Run(ctx context.Context, args *clip.CommandArgs[environ]) error {
-	c.mustGetopt(args)
-	return c.run(args)
+// cmdInitMain is the entry point for the init command.
+func cmdInitMain(ctx context.Context, args *clip.CommandArgs[environ]) error {
+	return mustNewCmdInitRunner(args).run(args)
 }
 
-// mustGetopt gets command line options.
-func (c *cmdInitRunner) mustGetopt(args *clip.CommandArgs[environ]) {
+// mustNewCmdInitRunner creates a new [*cmdInitRunner].
+func mustNewCmdInitRunner(args *clip.CommandArgs[environ]) *cmdInitRunner {
 	// Initialize the default configuration.
-	c.XWriter = io.Discard
-	c.Style = nil
+	c := &cmdInitRunner{
+		Style:   nil,
+		XWriter: io.Discard,
+	}
 
 	// Create empty command line parser.
 	clp := flag.NewFlagSet(args.CommandName, flag.ExitOnError)
@@ -58,6 +59,8 @@ func (c *cmdInitRunner) mustGetopt(args *clip.CommandArgs[environ]) {
 		c.XWriter = args.Env.Stderr()
 		c.Style = newNilSafeLipglossStyle()
 	}
+
+	return c
 }
 
 // --- execution ---
