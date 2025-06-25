@@ -27,6 +27,9 @@ type environ interface {
 	// CreateLockFile creates a lockfile at the given path.
 	CreateLockFile(path string) (lockReleaser, error)
 
+	// Environ returns the OS environment.
+	Environ() []string
+
 	// Executable returns the path to the executable file.
 	Executable() (string, error)
 
@@ -94,6 +97,11 @@ func (env *stdlibEnviron) AbsFilepath(path string) (string, error) {
 // CreateLockFile implements the [environ] interface.
 func (env *stdlibEnviron) CreateLockFile(path string) (lockReleaser, error) {
 	return lockedfile.MutexAt(path).Lock()
+}
+
+// Environ implements the [environ] interface.
+func (env *stdlibEnviron) Environ() []string {
+	return os.Environ()
 }
 
 // Executable implements the [environ] interface.

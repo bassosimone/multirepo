@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"os"
 	"os/exec"
 
 	"github.com/bassosimone/clip"
@@ -127,15 +126,13 @@ func (c *cmdForeachRunner) run(ctx context.Context, args *clip.CommandArgs[envir
 	return errors.Join(errlist...)
 }
 
-// TODO(bassosimone): we should not invoke os.Environ and os.Getenv here
-
 // execute executes the command in a given repository.
 func (c *cmdForeachRunner) execute(ctx context.Context, env environ, repo string) error {
 	// Preparing for adding to the environment variables.
-	environ := os.Environ()
+	environ := env.Environ()
 
 	// Conditionally add the `MULTIREPO_ROOT` environment variable.
-	if os.Getenv("MULTIREPO_ROOT") == "" {
+	if _, found := env.LookupEnv("MULTIREPO_ROOT"); !found {
 		wdir, err := env.Getwd()
 		if err != nil {
 			return err
@@ -146,7 +143,7 @@ func (c *cmdForeachRunner) execute(ctx context.Context, env environ, repo string
 	}
 
 	// Conditionally add the `MULTIREPO_EXECUTABLE` environment variable.
-	if os.Getenv("MULTIREPO_EXECUTABLE") == "" {
+	if _, found := env.LookupEnv("MULTIREPO_EXECUTABLE"); !found {
 		exe, err := env.Executable()
 		if err != nil {
 			return err
