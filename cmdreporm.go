@@ -7,7 +7,6 @@ import (
 	"context"
 
 	"github.com/bassosimone/clip"
-	"github.com/bassosimone/clip/pkg/assert"
 	"github.com/bassosimone/clip/pkg/flag"
 )
 
@@ -18,7 +17,10 @@ var cmdRepoRm = &clip.LeafCommand[environ]{
 }
 
 // cmdRepoRmRunner runs the 'repo rm' command.
-type cmdRepoRmRunner struct{}
+type cmdRepoRmRunner struct {
+	// Repo is the name of the repository directory to remove.
+	Repo string
+}
 
 // --- entry & setup ---
 
@@ -30,17 +32,21 @@ func cmdRepoRmMain(ctx context.Context, args *clip.CommandArgs[environ]) error {
 // mustNewCmdRepoRmRunner creates a new [*cmdRepoRmRunner].
 func mustNewCmdRepoRmRunner(args *clip.CommandArgs[environ]) *cmdRepoRmRunner {
 	// initialize the default configuration.
-	c := &cmdRepoRmRunner{}
+	c := &cmdRepoRmRunner{
+		Repo: "",
+	}
 
 	// Create empty command line parser.
-	clp := flag.NewFlagSet(args.CommandName, flag.ExitOnError)
-	clp.SetDescription(args.Command.BriefDescription())
-	clp.SetArgsDocs("<repo>")
+	fset := flag.NewFlagSet(args.CommandName, flag.ExitOnError)
+	fset.SetDescription(args.Command.BriefDescription())
+	fset.SetArgsDocs("<repo>")
 
 	// Parse the command line arguments.
-	clip.Must(args.Env, clp.Parse(args.Args))
-	clip.Must(args.Env, clp.PositionalArgsEqualCheck(1))
+	clip.Must(args.Env, fset.Parse(args.Args))
+	clip.Must(args.Env, fset.PositionalArgsEqualCheck(1))
 
+	// Add the repo to remove
+	c.Repo = fset.Args()[0]
 	return c
 }
 
@@ -64,8 +70,7 @@ func (c *cmdRepoRmRunner) run(args *clip.CommandArgs[environ]) error {
 	}
 
 	// Remove from the configuration
-	assert.True(len(args.Args) >= 1, "expected the repository directory path")
-	delete(config.Repos, args.Args[0])
+	delete(config.Repos, c.Repo)
 
 	// Write the configuration file back to disk
 	if err := config.WriteFile(args.Env, dd.configFilePath()); err != nil {

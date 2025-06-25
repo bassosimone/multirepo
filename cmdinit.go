@@ -43,16 +43,16 @@ func mustNewCmdInitRunner(args *clip.CommandArgs[environ]) *cmdInitRunner {
 	}
 
 	// Create empty command line parser.
-	clp := flag.NewFlagSet(args.CommandName, flag.ExitOnError)
-	clp.SetDescription(args.Command.BriefDescription())
-	clp.SetArgsDocs("")
+	fset := flag.NewFlagSet(args.CommandName, flag.ExitOnError)
+	fset.SetDescription(args.Command.BriefDescription())
+	fset.SetArgsDocs("")
 
 	// Add the `-x` flag.
-	xflag := clp.Bool("print-commands", 'x', "Log the commands we execute.")
+	xflag := fset.Bool("print-commands", 'x', "Log the commands we execute.")
 
 	// Parse the command line arguments.
-	clip.Must(args.Env, clp.Parse(args.Args))
-	clip.Must(args.Env, clp.PositionalArgsEqualCheck(0))
+	_ = fset.Parse(args.Args)
+	_ = fset.PositionalArgsEqualCheck(0)
 
 	// Honour the `-x` flag.
 	if *xflag {

@@ -59,25 +59,25 @@ func mustNewCmdForeachRunner(args *clip.CommandArgs[environ]) *cmdForeachRunner 
 	}
 
 	// Create empty command line parser.
-	clp := flag.NewFlagSet(args.CommandName, flag.ExitOnError)
-	clp.SetDescription(args.Command.BriefDescription())
-	clp.SetArgsDocs("<command> [args...]")
+	fset := flag.NewFlagSet(args.CommandName, flag.ExitOnError)
+	fset.SetDescription(args.Command.BriefDescription())
+	fset.SetArgsDocs("<command> [args...]")
 
 	// Add the `-k` flag.
-	kflag := clp.Bool("keep-going", 'k', "Continue iterating even if the subcommand fails.")
+	kflag := fset.Bool("keep-going", 'k', "Continue iterating even if the subcommand fails.")
 
 	// Add the `-x` flag.
-	xflag := clp.Bool("print-commands", 'x', "Log the commands we execute.")
+	xflag := fset.Bool("print-commands", 'x', "Log the commands we execute.")
 
-	// Disable option permuation to allow passing options to subcommands
-	clp.Parser().Flags |= parser.FlagNoPermute
+	// Disable option permutaion to allow passing options to subcommands
+	fset.Parser().Flags |= parser.FlagNoPermute
 
 	// Parse the command line arguments.
-	clip.Must(args.Env, clp.Parse(args.Args))
-	clip.Must(args.Env, clp.PositionalArgsRangeCheck(1, math.MaxInt))
+	_ = fset.Parse(args.Args)
+	_ = fset.PositionalArgsRangeCheck(1, math.MaxInt)
 
 	// Add the command to execute.
-	c.Argv = clp.Args()
+	c.Argv = fset.Args()
 
 	// Honour the `-k` flag.
 	if *kflag {
@@ -126,6 +126,8 @@ func (c *cmdForeachRunner) run(ctx context.Context, args *clip.CommandArgs[envir
 
 	return errors.Join(errlist...)
 }
+
+// TODO(bassosimone): we should not invoke os.Environ and os.Getenv here
 
 // execute executes the command in a given repository.
 func (c *cmdForeachRunner) execute(ctx context.Context, env environ, repo string) error {

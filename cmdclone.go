@@ -58,22 +58,22 @@ func mustNewCmdCloneRunner(args *clip.CommandArgs[environ]) *cmdCloneRunner {
 	}
 
 	// Create empty command line parser.
-	clp := flag.NewFlagSet(args.CommandName, flag.ExitOnError)
-	clp.SetDescription(args.Command.BriefDescription())
-	clp.SetArgsDocs("git@github.com:user/repo")
+	fset := flag.NewFlagSet(args.CommandName, flag.ExitOnError)
+	fset.SetDescription(args.Command.BriefDescription())
+	fset.SetArgsDocs("git@github.com:user/repo")
 
 	// Add the `-v` flag.
-	vflag := clp.Bool("verbose", 'v', "Show the output of git clone.")
+	vflag := fset.Bool("verbose", 'v', "Show the output of git clone.")
 
 	// Add the `-x` flag.
-	xflag := clp.Bool("print-commands", 'x', "Log the commands we execute.")
+	xflag := fset.Bool("print-commands", 'x', "Log the commands we execute.")
 
 	// Parse the command line arguments.
-	clip.Must(args.Env, clp.Parse(args.Args))
-	clip.Must(args.Env, clp.PositionalArgsEqualCheck(1))
+	_ = fset.Parse(args.Args)
+	_ = fset.PositionalArgsEqualCheck(1)
 
 	// Set the repository name to clone.
-	c.Repo = clp.Args()[0]
+	c.Repo = fset.Args()[0]
 
 	// Honour the `-v` flag.
 	if *vflag {
