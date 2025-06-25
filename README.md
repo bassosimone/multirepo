@@ -6,10 +6,6 @@ This repository implements a tool to manage several repositories
 as they were a single repository. This tool is still in the early
 stages of development and is not yet ready for production use.
 
-## Design
-
-See [DESIGN.md](DESIGN.md).
-
 ## Examples
 
 Creating a multirepo in the current directory:
