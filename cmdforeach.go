@@ -157,9 +157,17 @@ func (c *cmdForeachRunner) execute(ctx context.Context, env environ, repo string
 		mustFprintf(c.XWriter, "%s\n", c.Style.Renderf("+ export %s", variable))
 	}
 
-	// Create the subcommand to execute.
+	// As an optimization, if we're running `git`, prepend the
+	// `--no-pager` option otherwise... it's painful!
 	assert.True(len(c.Argv) >= 1, "expected at least the command name")
-	cmd := exec.CommandContext(ctx, c.Argv[0], c.Argv[1:]...)
+	reargv := []string{c.Argv[0]}
+	if reargv[0] == "git" {
+		reargv = append(reargv, "--no-pager")
+	}
+	reargv = append(reargv, c.Argv[1:]...)
+
+	// Create the subcommand to execute.
+	cmd := exec.CommandContext(ctx, reargv[0], reargv[1:]...)
 	cmd.Stdin = io.NopCloser(bytes.NewReader(nil))
 	cmd.Stdout = env.Stdout()
 	cmd.Stderr = env.Stderr()
