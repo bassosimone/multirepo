@@ -109,7 +109,7 @@ This command implements the following steps:
 
 1. Locks the `.multirepo` directory using the `.multirepo/lock` file.
 
-2. Executes `git remote -v` in `<dir>` to obtain the SSH URL.
+2. Executes `git config --get remote.origin.url` in `<dir>` to obtain the SSH URL.
 
 3. Updates the configuration file `.multirepo/config.json`.
 
