@@ -63,10 +63,10 @@ func (c *cmdForeachRunner) mustGetopt(args *clip.CommandArgs[environ]) {
 	clp.SetArgsDocs("command [args...]")
 
 	// Add the `-k` flag.
-	kflag := clp.Bool("keep-going", 'k', false, "Continue iterating even if the subcommand fails.")
+	kflag := clp.Bool("keep-going", 'k', "Continue iterating even if the subcommand fails.")
 
 	// Add the `-x` flag.
-	xflag := clp.Bool("print-commands", 'x', false, "Log the commands we execute.")
+	xflag := clp.Bool("print-commands", 'x', "Log the commands we execute.")
 
 	// Disable option permuation to allow passing options to subcommands
 	clp.Parser().Flags |= parser.FlagNoPermute

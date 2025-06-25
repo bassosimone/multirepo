@@ -62,10 +62,10 @@ func (c *cmdCloneRunner) mustGetopt(args *clip.CommandArgs[environ]) {
 	clp.SetArgsDocs("git@github.com:user/repo")
 
 	// Add the `-v` flag.
-	vflag := clp.Bool("verbose", 'v', false, "Show the output of git clone.")
+	vflag := clp.Bool("verbose", 'v', "Show the output of git clone.")
 
 	// Add the `-x` flag.
-	xflag := clp.Bool("print-commands", 'x', false, "Log the commands we execute.")
+	xflag := clp.Bool("print-commands", 'x', "Log the commands we execute.")
 
 	// Parse the command line arguments.
 	clip.Must(args.Env, clp.Parse(args.Args))

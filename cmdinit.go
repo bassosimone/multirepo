@@ -47,7 +47,7 @@ func (c *cmdInitRunner) mustGetopt(args *clip.CommandArgs[environ]) {
 	clp.SetArgsDocs("")
 
 	// Add the `-x` flag.
-	xflag := clp.Bool("print-commands", 'x', false, "Log the commands we execute.")
+	xflag := clp.Bool("print-commands", 'x', "Log the commands we execute.")
 
 	// Parse the command line arguments.
 	clip.Must(args.Env, clp.Parse(args.Args))

@@ -17,9 +17,9 @@ func main() {
 				"clone":   cmdClone,
 				"foreach": cmdForeach,
 				"init":    cmdInit,
-				"version": cmdVersion,
 			},
 			ErrorHandling: clip.ExitOnError,
+			Version:       Version,
 		},
 		AutoCancel: true,
 	}
