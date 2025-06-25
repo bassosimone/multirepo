@@ -106,7 +106,7 @@ func (c *cmdForeachRunner) run(ctx context.Context, args *clip.CommandArgs[envir
 	defer unlock()
 
 	// Read the configuration file
-	cinfo, err := readConfig(args.Env, dd.configFilePath())
+	config, err := readConfig(args.Env, dd.configFilePath())
 	if err != nil {
 		mustFprintf(args.Env.Stderr(), "multirepo foreach: %s\n", err)
 		return err
@@ -114,7 +114,7 @@ func (c *cmdForeachRunner) run(ctx context.Context, args *clip.CommandArgs[envir
 
 	// Execute command in each repository
 	errlist := []error{}
-	for repo := range cinfo.Repos {
+	for repo := range config.Repos {
 		if err := c.execute(ctx, args.Env, repo); err != nil {
 			mustFprintf(args.Env.Stderr(), "multirepo foreach: %s\n", err)
 			errlist = append(errlist, err)

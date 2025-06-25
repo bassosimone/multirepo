@@ -17,20 +17,22 @@ multirepo directory to the multirepo and track it.
 
 5. `multirepo foreach` to execute a command in each repository.
 
+6. `multirepo repo ls` to list the tracked repositories.
 
-## `multirepo init`
+
+## `multirepo init [-x]`
 
 Creates an empty multirepo in the current directory.
-
-For example:
-
-```bash
-multirepo init [-x]
-```
 
 Flags:
 
 - `-x`: prints executed commands.
+
+For example:
+
+```bash
+multirepo init
+```
 
 This command implements the following steps:
 
@@ -130,3 +132,20 @@ This command implements the following steps:
 1. Locks the `.multirepo` directory using the `.multirepo/lock` file.
 
 2. Updates the configuration file `.multirepo/config.json`.
+
+
+## `multirepo repo ls`
+
+List the repositories inside the multirepo.
+
+For example:
+
+```bash
+multirepo repo ls
+```
+
+This command implements the following steps:
+
+1. Locks the `.multirepo` directory using the `.multirepo/lock` file.
+
+2. Prints the contents of the `.multirepo/config.json` file.

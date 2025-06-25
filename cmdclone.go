@@ -114,7 +114,7 @@ func (c *cmdCloneRunner) run(ctx context.Context, args *clip.CommandArgs[environ
 // clone clones a repository.
 func (c *cmdCloneRunner) clone(ctx context.Context, env environ, dd dotDir) error {
 	// Read the configuration file.
-	cinfo, err := readConfig(env, dd.configFilePath())
+	config, err := readConfig(env, dd.configFilePath())
 	if err != nil {
 		return err
 	}
@@ -140,8 +140,8 @@ func (c *cmdCloneRunner) clone(ctx context.Context, env environ, dd dotDir) erro
 	}
 
 	// Update the configuration file.
-	cinfo.AddRepo(scpInfo.Name(), scpInfo.String())
-	if err := cinfo.WriteFile(env, dd.configFilePath()); err != nil {
+	config.AddRepo(scpInfo.Name(), scpInfo.String())
+	if err := config.WriteFile(env, dd.configFilePath()); err != nil {
 		return err
 	}
 

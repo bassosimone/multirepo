@@ -21,6 +21,7 @@ func main() {
 					BriefDescriptionText: "Add/remove repositories from the multirepo index.",
 					Commands: map[string]clip.Command[environ]{
 						"add": cmdRepoAdd,
+						"ls":  cmdRepoLs,
 						"rm":  cmdRepoRm,
 					},
 					ErrorHandling: clip.ExitOnError,

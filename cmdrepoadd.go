@@ -87,7 +87,7 @@ func (c *cmdRepoAddRunner) run(ctx context.Context, args *clip.CommandArgs[envir
 	defer unlock()
 
 	// Read the configuration file
-	cinfo, err := readConfig(args.Env, dd.configFilePath())
+	config, err := readConfig(args.Env, dd.configFilePath())
 	if err != nil {
 		mustFprintf(args.Env.Stderr(), "multirepo repo add: %s\n", err)
 		return err
@@ -101,10 +101,10 @@ func (c *cmdRepoAddRunner) run(ctx context.Context, args *clip.CommandArgs[envir
 	}
 
 	// Update the config
-	cinfo.Repos[c.Repo] = repoInfo{URL: URL}
+	config.Repos[c.Repo] = repoInfo{URL: URL}
 
 	// Write the configuration file back to disk
-	if err := cinfo.WriteFile(args.Env, dd.configFilePath()); err != nil {
+	if err := config.WriteFile(args.Env, dd.configFilePath()); err != nil {
 		mustFprintf(args.Env.Stderr(), "multirepo repo add: %s\n", err)
 		return err
 	}

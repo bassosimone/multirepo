@@ -43,6 +43,12 @@ Executing a command for each repository in the multirepo:
 multirepo foreach git status -v
 ```
 
+Listing repositories belonging to the multirepo index:
+
+```bash
+multirepo repo ls
+```
+
 Getting interactive help:
 
 ```bash
