@@ -10,7 +10,8 @@ import (
 	"slices"
 
 	"github.com/bassosimone/clip"
-	"github.com/bassosimone/clip/pkg/flag"
+	"github.com/bassosimone/clip/pkg/assert"
+	"github.com/bassosimone/clip/pkg/nflag"
 )
 
 // cmdRepoLs is the static 'repo ls' command
@@ -35,13 +36,17 @@ func mustNewCmdRepoLsRunner(args *clip.CommandArgs[environ]) *cmdRepoLsRunner {
 	c := &cmdRepoLsRunner{}
 
 	// Create empty command line parser.
-	fset := flag.NewFlagSet(args.CommandName, flag.ExitOnError)
-	fset.SetDescription(args.Command.BriefDescription())
-	fset.SetArgsDocs("<repo>")
+	fset := nflag.NewFlagSet(args.CommandName, nflag.ExitOnError)
+	fset.Description = args.Command.BriefDescription()
+	fset.PositionalArgumentsUsage = "<repo>"
+	fset.MinPositionalArgs = 0
+	fset.MaxPositionalArgs = 0
+
+	// Add the `-h, --help` flag.
+	fset.AutoHelp("help", 'h', "Show this help message and exit.")
 
 	// Parse the command line arguments.
-	clip.Must(args.Env, fset.Parse(args.Args))
-	clip.Must(args.Env, fset.PositionalArgsEqualCheck(0))
+	assert.NotError(fset.Parse(args.Args))
 
 	return c
 }

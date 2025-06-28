@@ -7,7 +7,8 @@ import (
 	"context"
 
 	"github.com/bassosimone/clip"
-	"github.com/bassosimone/clip/pkg/flag"
+	"github.com/bassosimone/clip/pkg/assert"
+	"github.com/bassosimone/clip/pkg/nflag"
 )
 
 // cmdRepoRm is the static 'repo rm' command
@@ -37,13 +38,17 @@ func mustNewCmdRepoRmRunner(args *clip.CommandArgs[environ]) *cmdRepoRmRunner {
 	}
 
 	// Create empty command line parser.
-	fset := flag.NewFlagSet(args.CommandName, flag.ExitOnError)
-	fset.SetDescription(args.Command.BriefDescription())
-	fset.SetArgsDocs("<repo>")
+	fset := nflag.NewFlagSet(args.CommandName, nflag.ExitOnError)
+	fset.Description = args.Command.BriefDescription()
+	fset.PositionalArgumentsUsage = "<repo>"
+	fset.MinPositionalArgs = 1
+	fset.MaxPositionalArgs = 1
+
+	// Add the `-h, --help` flag.
+	fset.AutoHelp("help", 'h', "Show this help message and exit.")
 
 	// Parse the command line arguments.
-	clip.Must(args.Env, fset.Parse(args.Args))
-	clip.Must(args.Env, fset.PositionalArgsEqualCheck(1))
+	assert.NotError(fset.Parse(args.Args))
 
 	// Add the repo to remove
 	c.Repo = fset.Args()[0]

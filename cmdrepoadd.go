@@ -12,7 +12,8 @@ import (
 	"strings"
 
 	"github.com/bassosimone/clip"
-	"github.com/bassosimone/clip/pkg/flag"
+	"github.com/bassosimone/clip/pkg/assert"
+	"github.com/bassosimone/clip/pkg/nflag"
 	"github.com/kballard/go-shellquote"
 )
 
@@ -51,16 +52,20 @@ func mustNewCmdRepoAddRunner(args *clip.CommandArgs[environ]) *cmdRepoAddRunner 
 	}
 
 	// Create empty command line parser.
-	fset := flag.NewFlagSet(args.CommandName, flag.ExitOnError)
-	fset.SetDescription(args.Command.BriefDescription())
-	fset.SetArgsDocs("<repo>")
+	fset := nflag.NewFlagSet(args.CommandName, nflag.ExitOnError)
+	fset.Description = args.Command.BriefDescription()
+	fset.OptionsArgumentsSeparator = "<repo>"
+	fset.MinPositionalArgs = 1
+	fset.MaxPositionalArgs = math.MaxInt
+
+	// Add the `-h, --help` flag.
+	fset.AutoHelp("help", 'h', "Show this help message and exit.")
 
 	// Add the `-x` flag.
 	xflag := fset.Bool("print-commands", 'x', "Log the commands we execute.")
 
 	// Parse the command line arguments.
-	_ = fset.Parse(args.Args)
-	_ = fset.PositionalArgsRangeCheck(1, math.MaxInt)
+	assert.NotError(fset.Parse(args.Args))
 
 	// Honour the `-x` flag.
 	if *xflag {

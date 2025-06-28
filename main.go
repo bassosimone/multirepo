@@ -3,7 +3,10 @@
 
 package main
 
-import "github.com/bassosimone/clip"
+import (
+	"github.com/bassosimone/clip"
+	"github.com/bassosimone/clip/pkg/nflag"
+)
 
 func main() {
 	// Initialize the environment
@@ -24,12 +27,16 @@ func main() {
 						"ls":  cmdRepoLs,
 						"rm":  cmdRepoRm,
 					},
-					ErrorHandling: clip.ExitOnError,
-					Version:       Version,
+					ErrorHandling:             nflag.ExitOnError,
+					Version:                   Version,
+					OptionPrefixes:            []string{"--", "-"},
+					OptionsArgumentsSeparator: "--",
 				},
 			},
-			ErrorHandling: clip.ExitOnError,
-			Version:       Version,
+			ErrorHandling:             nflag.ExitOnError,
+			Version:                   Version,
+			OptionPrefixes:            []string{"--", "-"},
+			OptionsArgumentsSeparator: "--",
 		},
 		AutoCancel: true,
 	}

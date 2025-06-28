@@ -1,7 +1,7 @@
 github.com/aymanbagabas/go-osc52/v2 v2.0.1 h1:HwpRHbFMcZLEVr42D4p7XBqjyuxQH5SMiErDT4WkJ2k=
 github.com/aymanbagabas/go-osc52/v2 v2.0.1/go.mod h1:uYgXzlJ7ZpABp8OJ+exZzJJhRNQ2ASbcXHWsFqH8hp8=
-github.com/bassosimone/clip v0.5.0 h1:ZIHTdSRSEwLCGDpUAWSARmd7D5zXLN3/ao1MpIm9kjc=
-github.com/bassosimone/clip v0.5.0/go.mod h1:ap773mV2CY0IN4k7nE33DihurO+29a+hLn+X2R9QWXE=
+github.com/bassosimone/clip v0.7.0 h1:4ZVfmD11B9TSklyMz8QvNVLwaVoqFx9nD2fUZpvzoME=
+github.com/bassosimone/clip v0.7.0/go.mod h1:9VyZloF9tsGCCHaoF9itqKh4wDlWhLeXoEcZpOyLAWw=
 github.com/charmbracelet/colorprofile v0.3.1 h1:k8dTHMd7fgw4bnFd7jXTLZrSU/CQrKnL3m+AxCzDz40=
 github.com/charmbracelet/colorprofile v0.3.1/go.mod h1:/GkGusxNs8VB/RSOh3fu0TJmQ4ICMMPApIIVn0KszZ0=
 github.com/charmbracelet/lipgloss v1.1.0 h1:vYXsiLHVkK7fp74RkV7b2kq9+zDLoEU4MZoFqR/noCY=

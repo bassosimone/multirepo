@@ -14,8 +14,7 @@ import (
 
 	"github.com/bassosimone/clip"
 	"github.com/bassosimone/clip/pkg/assert"
-	"github.com/bassosimone/clip/pkg/flag"
-	"github.com/bassosimone/clip/pkg/parser"
+	"github.com/bassosimone/clip/pkg/nflag"
 	"github.com/kballard/go-shellquote"
 )
 
@@ -58,9 +57,15 @@ func mustNewCmdForeachRunner(args *clip.CommandArgs[environ]) *cmdForeachRunner 
 	}
 
 	// Create empty command line parser.
-	fset := flag.NewFlagSet(args.CommandName, flag.ExitOnError)
-	fset.SetDescription(args.Command.BriefDescription())
-	fset.SetArgsDocs("<command> [args...]")
+	fset := nflag.NewFlagSet(args.CommandName, nflag.ExitOnError)
+	fset.Description = args.Command.BriefDescription()
+	fset.PositionalArgumentsUsage = "<command> [args...]"
+	fset.DisablePermute = true // Disable option permutaion to allow passing options to subcommands
+	fset.MinPositionalArgs = 1
+	fset.MaxPositionalArgs = math.MaxInt
+
+	// Add the `-h, --help` flag.
+	fset.AutoHelp("help", 'h', "Show this help message and exit.")
 
 	// Add the `-k` flag.
 	kflag := fset.Bool("keep-going", 'k', "Continue iterating even if the subcommand fails.")
@@ -68,12 +73,8 @@ func mustNewCmdForeachRunner(args *clip.CommandArgs[environ]) *cmdForeachRunner 
 	// Add the `-x` flag.
 	xflag := fset.Bool("print-commands", 'x', "Log the commands we execute.")
 
-	// Disable option permutaion to allow passing options to subcommands
-	fset.Parser().Flags |= parser.FlagNoPermute
-
 	// Parse the command line arguments.
-	_ = fset.Parse(args.Args)
-	_ = fset.PositionalArgsRangeCheck(1, math.MaxInt)
+	assert.NotError(fset.Parse(args.Args))
 
 	// Add the command to execute.
 	c.Argv = fset.Args()

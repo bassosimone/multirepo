@@ -11,7 +11,8 @@ import (
 	"os/exec"
 
 	"github.com/bassosimone/clip"
-	"github.com/bassosimone/clip/pkg/flag"
+	"github.com/bassosimone/clip/pkg/assert"
+	"github.com/bassosimone/clip/pkg/nflag"
 	"github.com/kballard/go-shellquote"
 )
 
@@ -58,9 +59,14 @@ func mustNewCmdCloneRunner(args *clip.CommandArgs[environ]) *cmdCloneRunner {
 	}
 
 	// Create empty command line parser.
-	fset := flag.NewFlagSet(args.CommandName, flag.ExitOnError)
-	fset.SetDescription(args.Command.BriefDescription())
-	fset.SetArgsDocs("git@github.com:user/repo")
+	fset := nflag.NewFlagSet(args.CommandName, nflag.ExitOnError)
+	fset.Description = args.Command.BriefDescription()
+	fset.PositionalArgumentsUsage = "git@github.com:user/repo"
+	fset.MinPositionalArgs = 1
+	fset.MaxPositionalArgs = 1
+
+	// Add the `-h, --help` flag.
+	fset.AutoHelp("help", 'h', "Show this help message and exit.")
 
 	// Add the `-v` flag.
 	vflag := fset.Bool("verbose", 'v', "Show the output of git clone.")
@@ -69,8 +75,7 @@ func mustNewCmdCloneRunner(args *clip.CommandArgs[environ]) *cmdCloneRunner {
 	xflag := fset.Bool("print-commands", 'x', "Log the commands we execute.")
 
 	// Parse the command line arguments.
-	_ = fset.Parse(args.Args)
-	_ = fset.PositionalArgsEqualCheck(1)
+	assert.NotError(fset.Parse(args.Args))
 
 	// Set the repository name to clone.
 	c.Repo = fset.Args()[0]
